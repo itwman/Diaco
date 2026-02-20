@@ -1,0 +1,20 @@
+PassengerEnabled On
+PassengerAppRoot /home/diaco761/public_html
+PassengerStartupFile passenger_wsgi.py
+PassengerAppType wsgi
+PassengerPython /home/diaco761/public_html/venv/bin/python3
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Static files را مستقیم سرو کن
+    RewriteCond %{REQUEST_URI} ^/static/
+    RewriteRule ^ - [L]
+
+    RewriteCond %{REQUEST_URI} ^/media/
+    RewriteRule ^ - [L]
+
+    # بقیه به Passenger
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ passenger_wsgi.py/$1 [QSA,L]
+</IfModule>
