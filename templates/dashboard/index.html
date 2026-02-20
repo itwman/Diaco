@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}داشبورد | دیاکو MES{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'vendor/apexcharts/apexcharts.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title"><h4 class="mb-0">داشبورد</h4></div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item active">سیستم مدیریت تولید دیاکو</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── KPI اصلی ───────────────────────────────────────── -->
+<div class="row">
+
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 f-s-13">سفارشات فعال</p>
+                        <h3 class="mb-0 f-w-700">{{ orders_stats.active }}</h3>
+                    </div>
+                    <div class="h-50 w-50 d-flex-center b-r-15 bg-light-primary">
+                        <i class="ti ti-file-text f-s-24 text-primary"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-light-success f-s-11">{{ orders_stats.delivered }} تحویل شده</span>
+                    <span class="badge bg-light-secondary f-s-11 ms-1">{{ orders_stats.draft }} پیش‌نویس</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 f-s-13">موجودی الیاف</p>
+                        <h3 class="mb-0 f-w-700">{{ inventory_stats.fiber_weight|floatformat:0 }} <small class="f-s-14 text-muted">kg</small></h3>
+                    </div>
+                    <div class="h-50 w-50 d-flex-center b-r-15 bg-light-success">
+                        <i class="ti ti-box f-s-24 text-success"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-light-info f-s-11">{{ inventory_stats.dye_count }} رنگ</span>
+                    <span class="badge bg-light-warning f-s-11 ms-1">{{ inventory_stats.chemical_count }} شیمیایی</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 f-s-13">سفارشات عقب‌افتاده</p>
+                        <h3 class="mb-0 f-w-700 {% if orders_stats.overdue > 0 %}text-danger{% endif %}">{{ orders_stats.overdue }}</h3>
+                    </div>
+                    <div class="h-50 w-50 d-flex-center b-r-15 {% if orders_stats.overdue > 0 %}bg-light-danger{% else %}bg-light-success{% endif %}">
+                        <i class="ti ti-alert-triangle f-s-24 {% if orders_stats.overdue > 0 %}text-danger{% else %}text-success{% endif %}"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-light-primary f-s-11">{{ orders_stats.total }} کل سفارش</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xxl-3 col-sm-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 f-s-13">دستور کار باز</p>
+                        <h3 class="mb-0 f-w-700">{{ maintenance_stats.wo_open }}</h3>
+                    </div>
+                    <div class="h-50 w-50 d-flex-center b-r-15 bg-light-warning">
+                        <i class="ti ti-tool f-s-24 text-warning"></i>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    {% if maintenance_stats.pm_overdue > 0 %}
+                    <span class="badge bg-light-danger f-s-11">{{ maintenance_stats.pm_overdue }} PM عقب‌افتاده</span>
+                    {% else %}
+                    <span class="badge bg-light-success f-s-11">PM بروز است ✓</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── KPI تکمیل نخ v2.0 ──────────────────────────────── -->
+{% if v2_kpi %}
+<div class="row mt-2">
+    <div class="col-12 mb-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary" style="padding:5px 14px;font-size:0.8rem;">✨ تکمیل نخ v2.0 — امروز</span>
+            <small class="text-muted">بوبین‌پیچی · دولاتابی · هیت‌ست</small>
+            <a href="{% url 'reports:production_chain' %}" class="ms-auto btn btn-sm btn-outline-secondary" style="font-size:0.75rem;">
+                <i class="ti ti-arrow-right-circle"></i> گزارش زنجیره
+            </a>
+        </div>
+    </div>
+
+    <!-- بوبین‌پیچی WD -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card" style="border-top:3px solid #0891b2;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <p class="text-muted mb-0 f-s-12">بوبین‌پیچی (WD)</p>
+                        <h4 class="mb-0 f-w-700" style="color:#0891b2;">{{ v2_kpi.wd_batches }} بچ امروز</h4>
+                    </div>
+                    <div class="h-45 w-45 d-flex-center b-r-10" style="background:#cffafe;">
+                        <i class="ti ti-rotate-2 f-s-22" style="color:#0891b2;"></i>
+                    </div>
+                </div>
+                <div class="row g-0 text-center">
+                    <div class="col-4">
+                        <div class="f-s-17 f-w-700">{{ v2_kpi.wd_output_kg|floatformat:1 }}</div>
+                        <div class="f-s-11 text-muted">kg خروجی</div>
+                    </div>
+                    <div class="col-4" style="border-right:1px solid #f1f5f9;border-left:1px solid #f1f5f9;">
+                        <div class="f-s-17 f-w-700
+                            {% if v2_kpi.wd_avg_cuts > 50 %}text-danger
+                            {% elif v2_kpi.wd_avg_cuts > 20 %}text-warning
+                            {% else %}text-success{% endif %}">
+                            {{ v2_kpi.wd_avg_cuts|floatformat:0 }}
+                        </div>
+                        <div class="f-s-11 text-muted">برش/100km</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="f-s-17 f-w-700
+                            {% if v2_kpi.wd_avg_efficiency >= 85 %}text-success
+                            {% elif v2_kpi.wd_avg_efficiency >= 65 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ v2_kpi.wd_avg_efficiency|floatformat:0 }}%
+                        </div>
+                        <div class="f-s-11 text-muted">راندمان</div>
+                    </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{% url 'reports:winding_report' %}" class="btn btn-sm" style="background:#cffafe;color:#0891b2;">
+                        <i class="ti ti-chart-bar"></i> گزارش
+                    </a>
+                    <a href="{% url 'winding:list' %}" class="btn btn-sm btn-light">
+                        <i class="ti ti-list"></i> لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- دولاتابی TFO -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card" style="border-top:3px solid #7c3aed;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <p class="text-muted mb-0 f-s-12">دولاتابی (TFO)</p>
+                        <h4 class="mb-0 f-w-700" style="color:#7c3aed;">{{ v2_kpi.tfo_batches }} بچ امروز</h4>
+                    </div>
+                    <div class="h-45 w-45 d-flex-center b-r-10" style="background:#ede9fe;">
+                        <i class="ti ti-infinity f-s-22" style="color:#7c3aed;"></i>
+                    </div>
+                </div>
+                <div class="row g-0 text-center">
+                    <div class="col-4">
+                        <div class="f-s-17 f-w-700">{{ v2_kpi.tfo_output_kg|floatformat:1 }}</div>
+                        <div class="f-s-11 text-muted">kg خروجی</div>
+                    </div>
+                    <div class="col-4" style="border-right:1px solid #f1f5f9;border-left:1px solid #f1f5f9;">
+                        <div class="f-s-17 f-w-700
+                            {% if v2_kpi.tfo_avg_efficiency >= 90 %}text-success
+                            {% elif v2_kpi.tfo_avg_efficiency >= 70 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ v2_kpi.tfo_avg_efficiency|floatformat:0 }}%
+                        </div>
+                        <div class="f-s-11 text-muted">راندمان</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="f-s-17 f-w-700
+                            {% if v2_kpi.tfo_total_breakage > 10 %}text-danger
+                            {% elif v2_kpi.tfo_total_breakage > 5 %}text-warning
+                            {% else %}text-success{% endif %}">
+                            {{ v2_kpi.tfo_total_breakage }}
+                        </div>
+                        <div class="f-s-11 text-muted">پارگی</div>
+                    </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{% url 'reports:tfo_report' %}" class="btn btn-sm" style="background:#ede9fe;color:#7c3aed;">
+                        <i class="ti ti-chart-bar"></i> گزارش
+                    </a>
+                    <a href="{% url 'tfo:list' %}" class="btn btn-sm btn-light">
+                        <i class="ti ti-list"></i> لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- هیت‌ست HS -->
+    <div class="col-xl-4 col-md-6">
+        <div class="card" style="border-top:3px solid #dc2626;">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <p class="text-muted mb-0 f-s-12">هیت‌ست (HS)</p>
+                        <h4 class="mb-0 f-w-700" style="color:#dc2626;">{{ v2_kpi.hs_batches }} بچ امروز</h4>
+                    </div>
+                    <div class="h-45 w-45 d-flex-center b-r-10" style="background:#fee2e2;">
+                        <i class="ti ti-flame f-s-22" style="color:#dc2626;"></i>
+                    </div>
+                </div>
+                {% if v2_kpi.hs_batches > 0 %}
+                <div class="row g-0 text-center mb-2">
+                    <div class="col-6">
+                        <div class="f-s-20 f-w-800 text-success">✔ {{ v2_kpi.hs_pass }}</div>
+                        <div class="f-s-11 text-muted">قبول</div>
+                    </div>
+                    <div class="col-6" style="border-right:1px solid #f1f5f9;">
+                        <div class="f-s-20 f-w-800 {% if v2_kpi.hs_fail > 0 %}text-danger{% else %}text-muted{% endif %}">✘ {{ v2_kpi.hs_fail }}</div>
+                        <div class="f-s-11 text-muted">رد</div>
+                    </div>
+                </div>
+                {% if v2_kpi.hs_pass_rate is not None %}
+                <div class="progress mb-1" style="height:7px;border-radius:4px;">
+                    <div class="progress-bar {% if v2_kpi.hs_pass_rate >= 90 %}bg-success{% elif v2_kpi.hs_pass_rate >= 70 %}bg-warning{% else %}bg-danger{% endif %}"
+                         style="width:{{ v2_kpi.hs_pass_rate }}%;"></div>
+                </div>
+                <div class="text-center f-s-11 text-muted">نرخ قبول: <b>{{ v2_kpi.hs_pass_rate }}%</b></div>
+                {% endif %}
+                {% else %}
+                <div class="text-center text-muted py-2 f-s-13">امروز بچی ثبت نشده</div>
+                {% endif %}
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{% url 'reports:heatset_report' %}" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;">
+                        <i class="ti ti-chart-bar"></i> گزارش
+                    </a>
+                    <a href="{% url 'heatset:list' %}" class="btn btn-sm btn-light">
+                        <i class="ti ti-list"></i> لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+<!-- ── جداول اصلی ─────────────────────────────────────── -->
+<div class="row">
+
+    <!-- سفارشات اخیر -->
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">سفارشات اخیر</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>شماره</th>
+                                <th>مشتری</th>
+                                <th>مقدار (kg)</th>
+                                <th>اولویت</th>
+                                <th>وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td class="f-w-600">{{ order.order_number }}</td>
+                                <td>{{ order.customer.name }}</td>
+                                <td>{{ order.quantity_kg|floatformat:0 }}</td>
+                                <td>
+                                    {% if order.priority == 'urgent' %}<span class="badge bg-danger">{{ order.get_priority_display }}</span>
+                                    {% elif order.priority == 'high' %}<span class="badge bg-warning">{{ order.get_priority_display }}</span>
+                                    {% else %}<span class="badge bg-secondary">{{ order.get_priority_display }}</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if order.status == 'in_production' %}<span class="badge bg-light-primary text-primary">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'delivered' %}<span class="badge bg-light-success text-success">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'cancelled' %}<span class="badge bg-light-danger text-danger">{{ order.get_status_display }}</span>
+                                    {% else %}<span class="badge bg-light-secondary text-secondary">{{ order.get_status_display }}</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center text-muted py-3">سفارشی ثبت نشده</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- دستور کارهای باز -->
+    <div class="col-xl-5">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">دستور کارهای باز</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>شماره</th>
+                                <th>ماشین</th>
+                                <th>اولویت</th>
+                                <th>وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wo in open_workorders %}
+                            <tr>
+                                <td class="f-w-600">{{ wo.wo_number }}</td>
+                                <td>{{ wo.machine.code }}</td>
+                                <td>
+                                    {% if wo.priority == 'critical' %}<span class="badge bg-danger">{{ wo.get_priority_display }}</span>
+                                    {% elif wo.priority == 'high' %}<span class="badge bg-warning">{{ wo.get_priority_display }}</span>
+                                    {% else %}<span class="badge bg-secondary">{{ wo.get_priority_display }}</span>{% endif %}
+                                </td>
+                                <td><span class="badge bg-light-info text-info">{{ wo.get_status_display }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">دستور کار بازی نیست ✓</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

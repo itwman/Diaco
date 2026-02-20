@@ -1,0 +1,92 @@
+{% extends "reports/report_base.html" %}
+
+{% block report_content %}
+<!-- نمودار تولید اپراتورها -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-users me-1"></i> تولید اپراتورها (رینگ)</h6></div>
+    <div class="card-body"><div id="chart-operators" style="height:350px;"></div></div>
+</div>
+
+<!-- جدول اپراتورها -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-user me-1"></i> عملکرد اپراتورها</h6></div>
+    <div class="card-body table-responsive">
+        <table class="table table-striped table-sm">
+            <thead><tr><th>#</th><th>اپراتور</th><th>تولید (kg)</th><th>راندمان (%)</th><th>پارگی</th><th>بچ</th></tr></thead>
+            <tbody>
+                {% for op in operators %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ op.name }}</strong></td>
+                    <td>{{ op.total_output|floatformat:1 }}</td>
+                    <td>
+                        <span class="badge {% if op.avg_efficiency >= 85 %}bg-success{% elif op.avg_efficiency >= 70 %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ op.avg_efficiency }}%
+                        </span>
+                    </td>
+                    <td>{{ op.total_breakage }}</td>
+                    <td>{{ op.batch_count }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted">داده‌ای یافت نشد</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- نمودار شیفت‌ها -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-clock me-1"></i> راندمان شیفت‌ها</h6></div>
+    <div class="card-body"><div id="chart-shifts" style="height:300px;"></div></div>
+</div>
+
+<!-- جدول شیفت‌ها -->
+<div class="card mb-4">
+    <div class="card-body table-responsive">
+        <table class="table table-striped table-sm">
+            <thead><tr><th>شیفت</th><th>تولید (kg)</th><th>راندمان (%)</th><th>پارگی</th><th>بچ</th></tr></thead>
+            <tbody>
+                {% for sh in shifts %}
+                <tr>
+                    <td><strong>{{ sh.name }}</strong></td>
+                    <td>{{ sh.total_output|floatformat:1 }}</td>
+                    <td>
+                        <span class="badge {% if sh.avg_efficiency >= 85 %}bg-success{% elif sh.avg_efficiency >= 70 %}bg-warning{% else %}bg-danger{% endif %}">
+                            {{ sh.avg_efficiency }}%
+                        </span>
+                    </td>
+                    <td>{{ sh.total_breakage }}</td>
+                    <td>{{ sh.batch_count }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">داده‌ای یافت نشد</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+var opData = {{ chart_operators|safe }};
+new ApexCharts(document.querySelector("#chart-operators"), {
+    chart: { type: 'bar', height: 350, fontFamily: 'Vazirmatn FD' },
+    series: [{ name: 'تولید (kg)', data: opData.map(d => d.value) }],
+    xaxis: { categories: opData.map(d => d.label) },
+    colors: ['#4361ee'],
+    plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+}).render();
+
+var shData = {{ chart_shifts|safe }};
+new ApexCharts(document.querySelector("#chart-shifts"), {
+    chart: { type: 'bar', height: 300, fontFamily: 'Vazirmatn FD' },
+    series: [{ name: 'راندمان %', data: shData.map(d => d.value) }],
+    xaxis: { categories: shData.map(d => d.label) },
+    colors: ['#198754'],
+    plotOptions: { bar: { borderRadius: 4 } },
+    yaxis: { max: 100 },
+}).render();
+</script>
+{% endblock %}

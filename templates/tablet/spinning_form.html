@@ -1,0 +1,468 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت رینگ{% endblock %}
+{% block header_icon %}rotate-clockwise{% endblock %}
+{% block header_title %}ثبت تولید رینگ{% endblock %}
+
+{% block content %}
+<style>
+    /* دکمه‌های انتخاب سریع */
+    .toggle-group {
+        display: flex;
+        gap: 10px;
+    }
+    .toggle-btn {
+        flex: 1;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        cursor: pointer;
+        background: #f8fafc;
+        color: #64748b;
+        transition: all 0.2s;
+        user-select: none;
+    }
+    .toggle-btn.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    /* نمایشگر راندمان */
+    .efficiency-display {
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        border: 2px solid #86efac;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+    }
+    .efficiency-display.warn {
+        background: linear-gradient(135deg, #fefce8, #fef9c3);
+        border-color: #fde047;
+    }
+    .efficiency-display.danger {
+        background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+        border-color: #fca5a5;
+    }
+    .efficiency-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #16a34a;
+        line-height: 1;
+    }
+    .efficiency-display.warn .efficiency-value { color: #ca8a04; }
+    .efficiency-display.danger .efficiency-value { color: #dc2626; }
+    .efficiency-label {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    /* ورودی دوک‌ها */
+    .spindle-input-group {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 10px;
+        align-items: center;
+    }
+    .spindle-sep {
+        font-size: 1.5rem;
+        color: #94a3b8;
+        text-align: center;
+        font-weight: 300;
+    }
+    .spindle-label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-align: center;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+    /* راهنمای سریع */
+    .quick-hint {
+        background: #f0f9ff;
+        border-right: 4px solid #38bdf8;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        color: #0369a1;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: #0ea5e9; }
+
+    /* وزن */
+    .weight-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .weight-box {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+    }
+    .weight-box label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .weight-box input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 1.3rem;
+        font-weight: 700;
+        text-align: center;
+        color: #1e293b;
+        outline: none;
+    }
+    .weight-box input:focus { color: #667eea; }
+    .weight-box.primary { border-color: #667eea; background: #f5f3ff; }
+
+    /* بخش پارگی */
+    .breakage-counter {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fff7f0;
+        border: 2px solid #fed7aa;
+        border-radius: 14px;
+        padding: 16px 20px;
+    }
+    .breakage-counter.high {
+        background: #fff1f2;
+        border-color: #fca5a5;
+    }
+    .counter-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 2px solid #e2e8f0;
+        background: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+    .counter-btn:active { transform: scale(0.9); }
+    .counter-btn.minus { color: #ef4444; border-color: #fca5a5; }
+    .counter-btn.minus:hover { background: #fee2e2; }
+    .counter-btn.plus { color: #10b981; border-color: #6ee7b7; }
+    .counter-btn.plus:hover { background: #d1fae5; }
+    .counter-value {
+        flex: 1;
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #ea580c;
+    }
+    .counter-value.zero { color: #16a34a; }
+    .counter-label {
+        font-size: 0.8rem;
+        color: #9a3412;
+        font-weight: 600;
+    }
+
+    .d-none { display: none; }
+</style>
+
+<form method="post" class="tablet-form" id="spinningForm">
+    {% csrf_token %}
+
+    <!-- راهنما -->
+    <div class="quick-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>فقط اطلاعات این شیفت را وارد کنید. پارامترهای ماشین توسط مدیر تنظیم شده است.</span>
+    </div>
+
+    <!-- ماشین + بچ فینیشر -->
+    <div class="tablet-card">
+        <div class="tablet-card-title">
+            <i class="ti ti-cpu"></i> ماشین و ورودی
+        </div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین رینگ <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required id="machineSelect">
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}"
+                        data-spindles="{{ m.specs.num_spindles|default:'' }}"
+                        data-yarn="{{ m.specs.yarn_count|default:'' }}"
+                        data-tpm="{{ m.specs.twist_tpm|default:'' }}">
+                        {{ m.code }} — {{ m.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div id="machineSpecs" class="quick-hint" style="margin-top:10px; display:none; font-size:0.8rem; padding:10px 14px;">
+                    <i class="ti ti-settings" style="font-size:1rem;"></i>
+                    <span id="machineSpecsText"></span>
+                </div>
+            </div>
+            <div>
+                <label class="form-label">بچ فینیشر ورودی <span class="text-danger">*</span></label>
+                <select name="finisher_production" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for f in finisher_batches %}
+                    <option value="{{ f.id }}">
+                        {{ f.batch_number }}{% if f.output_weight %} — {{ f.output_weight }} kg{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- جهت تاب — تنها پارامتری که سرشیفت تنظیم می‌کند -->
+    <div class="tablet-card">
+        <div class="tablet-card-title">
+            <i class="ti ti-settings-2"></i> تنظیم تاب
+        </div>
+        <div>
+            <label class="form-label">جهت تاب</label>
+            <div class="toggle-group">
+                <label class="toggle-btn active" id="btnZ">
+                    <input type="radio" name="twist_direction" value="Z" checked class="d-none">
+                    Z — راست‌تاب
+                </label>
+                <label class="toggle-btn" id="btnS">
+                    <input type="radio" name="twist_direction" value="S" class="d-none">
+                    S — چپ‌تاب
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- دوک‌های فعال + راندمان خودکار -->
+    <div class="tablet-card">
+        <div class="tablet-card-title">
+            <i class="ti ti-gauge"></i> تعداد دوک و راندمان
+        </div>
+
+        <div class="spindle-input-group" style="margin-bottom: 16px;">
+            <div>
+                <input type="number" name="num_spindles_active" id="spindlesActive"
+                       class="form-control" placeholder="۰" min="0" required
+                       oninput="calcEfficiency()">
+                <div class="spindle-label">دوک فعال</div>
+            </div>
+            <div class="spindle-sep">/</div>
+            <div>
+                <input type="number" name="num_spindles_total" id="spindlesTotal"
+                       class="form-control" placeholder="۰" min="0"
+                       oninput="calcEfficiency()">
+                <div class="spindle-label">کل دوک</div>
+            </div>
+        </div>
+
+        <!-- نمایش راندمان محاسبه‌شده -->
+        <div class="efficiency-display" id="effDisplay">
+            <div class="efficiency-value" id="effValue">—</div>
+            <div class="efficiency-label">راندمان دوک‌ها (خودکار محاسبه می‌شود)</div>
+        </div>
+        <!-- فیلد مخفی برای ذخیره راندمان -->
+        <input type="hidden" name="efficiency_pct" id="effHidden">
+    </div>
+
+    <!-- وزن -->
+    <div class="tablet-card">
+        <div class="tablet-card-title">
+            <i class="ti ti-scale"></i> وزن تولید
+        </div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>ورودی (kg) <span class="text-danger">*</span></label>
+                <input type="number" name="input_weight" id="inWeight"
+                       placeholder="۰.۰" step="0.1" min="0" required
+                       oninput="calcWaste()">
+            </div>
+            <div class="weight-box">
+                <label>خروجی (kg)</label>
+                <input type="number" name="output_weight" id="outWeight"
+                       placeholder="۰.۰" step="0.1" min="0"
+                       oninput="calcWaste()">
+            </div>
+        </div>
+        <!-- ضایعات محاسبه‌ای -->
+        <div id="wasteInfo" style="display:none; margin-top:12px; padding:10px 16px;
+             background:#fff7f0; border-radius:10px; border-right:4px solid #f97316;
+             font-size:0.9rem; color:#c2410c; font-weight:600;">
+            <i class="ti ti-trash"></i>
+            ضایعات تخمینی: <span id="wasteVal">—</span> kg
+        </div>
+    </div>
+
+    <!-- تعداد پارگی -->
+    <div class="tablet-card">
+        <div class="tablet-card-title">
+            <i class="ti ti-scissors"></i> تعداد پارگی در این شیفت
+        </div>
+        <div class="breakage-counter" id="breakageBox">
+            <button type="button" class="counter-btn minus" onclick="changeBreakage(-1)">−</button>
+            <div>
+                <div class="counter-value zero" id="breakageVal">۰</div>
+                <div class="counter-label" style="text-align:center;">پارگی</div>
+            </div>
+            <button type="button" class="counter-btn plus" onclick="changeBreakage(1)">+</button>
+            <input type="hidden" name="breakage_count" id="breakageInput" value="0">
+        </div>
+        <div id="breakageWarn" style="display:none; margin-top:12px; padding:10px 16px;
+             background:#fff1f2; border-radius:10px; border-right:4px solid #ef4444;
+             font-size:0.85rem; color:#dc2626; font-weight:600;">
+            <i class="ti ti-alert-triangle"></i>
+            تعداد پارگی بالاست — لطفاً در یادداشت توضیح دهید
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title">
+            <i class="ti ti-note"></i> یادداشت (اختیاری)
+        </div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="مشکلات غیرعادی، تغییر مواد، یا هر نکته دیگری..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <!-- دکمه‌ها -->
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-success flex-fill" id="submitBtn">
+            <i class="ti ti-check"></i> ثبت تولید رینگ
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── تاب جهت ─────────────────────────────────────────────
+document.getElementById('btnZ').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('btnS').classList.remove('active');
+});
+document.getElementById('btnS').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('btnZ').classList.remove('active');
+});
+
+// ── نمایش مشخصات ماشین ──────────────────────────────────
+document.getElementById('machineSelect').addEventListener('change', function(){
+    const opt = this.selectedOptions[0];
+    const spindles = opt.dataset.spindles;
+    const yarn = opt.dataset.yarn;
+    const tpm = opt.dataset.tpm;
+    const box = document.getElementById('machineSpecs');
+    const txt = document.getElementById('machineSpecsText');
+
+    if (spindles || yarn || tpm) {
+        let parts = [];
+        if (spindles) {
+            parts.push('دوک کل: ' + spindles);
+            document.getElementById('spindlesTotal').value = spindles;
+            calcEfficiency();
+        }
+        if (yarn) parts.push('نمره نخ: ' + yarn);
+        if (tpm) parts.push('تاب: ' + tpm + ' TPM');
+        txt.textContent = parts.join(' | ');
+        box.style.display = 'flex';
+    } else {
+        box.style.display = 'none';
+    }
+});
+
+// ── محاسبه راندمان ───────────────────────────────────────
+function calcEfficiency() {
+    const active = parseFloat(document.getElementById('spindlesActive').value);
+    const total = parseFloat(document.getElementById('spindlesTotal').value);
+    const disp = document.getElementById('effDisplay');
+    const val = document.getElementById('effValue');
+    const hidden = document.getElementById('effHidden');
+
+    if (active > 0 && total > 0) {
+        const pct = Math.round((active / total) * 100);
+        val.textContent = pct + '%';
+        hidden.value = pct;
+
+        disp.className = 'efficiency-display';
+        if (pct < 70) disp.classList.add('danger');
+        else if (pct < 85) disp.classList.add('warn');
+    } else {
+        val.textContent = '—';
+        hidden.value = '';
+        disp.className = 'efficiency-display';
+    }
+}
+
+// ── محاسبه ضایعات ────────────────────────────────────────
+function calcWaste() {
+    const inW = parseFloat(document.getElementById('inWeight').value);
+    const outW = parseFloat(document.getElementById('outWeight').value);
+    const info = document.getElementById('wasteInfo');
+    const wasteVal = document.getElementById('wasteVal');
+
+    if (inW > 0 && outW > 0 && inW >= outW) {
+        const waste = (inW - outW).toFixed(1);
+        wasteVal.textContent = waste;
+        info.style.display = 'block';
+    } else {
+        info.style.display = 'none';
+    }
+}
+
+// ── شمارنده پارگی ────────────────────────────────────────
+let breakageCount = 0;
+function changeBreakage(delta) {
+    breakageCount = Math.max(0, breakageCount + delta);
+    const val = document.getElementById('breakageVal');
+    const box = document.getElementById('breakageBox');
+    const warn = document.getElementById('breakageWarn');
+    const input = document.getElementById('breakageInput');
+
+    // تبدیل عدد به فارسی
+    val.textContent = breakageCount.toLocaleString('fa-IR');
+    input.value = breakageCount;
+
+    if (breakageCount === 0) {
+        val.className = 'counter-value zero';
+        box.className = 'breakage-counter';
+        warn.style.display = 'none';
+    } else if (breakageCount >= 10) {
+        val.className = 'counter-value';
+        box.className = 'breakage-counter high';
+        warn.style.display = 'block';
+    } else {
+        val.className = 'counter-value';
+        box.className = 'breakage-counter';
+        warn.style.display = 'none';
+    }
+}
+
+// ── جلوگیری از ثبت دوباره ───────────────────────────────
+document.getElementById('spinningForm').addEventListener('submit', function(){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

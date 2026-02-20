@@ -1,0 +1,3 @@
+{% extends "production/production_base_list.html" %}
+{% block extra_headers %}<th>نمره فتیله</th><th>گره (Neps)</th><th>خروجی</th>{% endblock %}
+{% block extra_cols %}<td>{{ item.sliver_count }}</td><td>{{ item.neps_count|default:"-" }}</td><td>{{ item.output_weight|default:"-" }} kg</td>{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "reports/report_base.html" %}
+{% block report_content %}
+
+<!-- KPI میانگین OEE کل -->
+{% if machine_oee %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-center border-0 shadow-sm">
+            <div class="card-body py-3">
+                <div class="fs-1 fw-bold {% if oee_avg >= 75 %}text-success{% elif oee_avg >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ oee_avg }}%
+                </div>
+                <div class="text-muted small">OEE میانگین کل</div>
+            </div>
+        </div>
+    </div>
+    {% if best_ring %}
+    <div class="col-6 col-md-3">
+        <div class="card text-center border-0 shadow-sm" style="border-top:3px solid #4361ee!important">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ best_ring.oee }}%</div>
+                <div class="text-muted small">بهترین رینگ ({{ best_ring.code }})</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if best_winding %}
+    <div class="col-6 col-md-3">
+        <div class="card text-center border-0 shadow-sm" style="border-top:3px solid #0891b2!important">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold" style="color:#0891b2">{{ best_winding.oee }}%</div>
+                <div class="text-muted small">بوبین‌پیچی ({{ best_winding.code }})</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if best_heatset %}
+    <div class="col-6 col-md-3">
+        <div class="card text-center border-0 shadow-sm" style="border-top:3px solid #dc2626!important">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-danger">{{ best_heatset.oee }}%</div>
+                <div class="text-muted small">هیت‌ست ({{ best_heatset.code }})</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- جدول OEE همه ماشین‌ها (گروه‌بندی شده) -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="ti ti-gauge me-1"></i> OEE تمام ماشین‌های تکمیل نخ v2.0</h6>
+        <span class="badge bg-primary">{{ machine_oee|length }} ماشین</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>بخش</th>
+                        <th>ماشین</th>
+                        <th>دسترسی%</th>
+                        <th>عملکرد%</th>
+                        <th>کیفیت%</th>
+                        <th>OEE%</th>
+                        <th>راندمان/نرخ‌قبول</th>
+                        <th>پارگی/رد</th>
+                        <th>تولید (kg)</th>
+                        <th>بچ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in machine_oee %}
+                    <tr>
+                        <td>
+                            {% if m.section == 'رینگ' %}
+                                <span class="badge" style="background:#4361ee">رینگ</span>
+                            {% elif m.section == 'بوبین‌پیچی' %}
+                                <span class="badge" style="background:#0891b2">WD</span>
+                            {% elif m.section == 'دولاتابی' %}
+                                <span class="badge" style="background:#7c3aed">TFO</span>
+                            {% elif m.section == 'هیت‌ست' %}
+                                <span class="badge" style="background:#dc2626">HS</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ m.section }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ m.code }}</strong>
+                            <br><small class="text-muted">{{ m.name }}</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-1">
+                                <div class="progress flex-grow-1" style="height:6px;min-width:40px">
+                                    <div class="progress-bar bg-info" style="width:{{ m.availability }}%"></div>
+                                </div>
+                                <small>{{ m.availability }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-1">
+                                <div class="progress flex-grow-1" style="height:6px;min-width:40px">
+                                    <div class="progress-bar bg-warning" style="width:{{ m.performance }}%"></div>
+                                </div>
+                                <small>{{ m.performance }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-1">
+                                <div class="progress flex-grow-1" style="height:6px;min-width:40px">
+                                    <div class="progress-bar {% if m.quality >= 90 %}bg-success{% elif m.quality >= 70 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ m.quality }}%"></div>
+                                </div>
+                                <small>{{ m.quality }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge fs-6 {% if m.oee >= 75 %}bg-success{% elif m.oee >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ m.oee }}%
+                            </span>
+                        </td>
+                        <td>{{ m.avg_efficiency }}%</td>
+                        <td>
+                            {% if m.total_breakage > 0 %}
+                                <span class="text-danger fw-bold">{{ m.total_breakage }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ m.total_output_kg|floatformat:1 }}</td>
+                        <td>{{ m.batch_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="10" class="text-center text-muted py-4">داده‌ای برای این بازه یافت نشد</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- نمودارها -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-chart-bar me-1"></i> OEE هر ماشین</h6></div>
+            <div class="card-body"><div id="chart-oee-machines" style="height:300px;"></div></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-chart-line me-1"></i> روند راندمان روزانه</h6></div>
+            <div class="card-body"><div id="chart-eff-trend" style="height:300px;"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- راهنمای OEE -->
+<div class="card">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <small class="text-muted fw-bold">OEE = دسترسی × عملکرد × کیفیت</small>
+            <span class="vr"></span>
+            <span class="badge bg-success">≥۷۵% عالی</span>
+            <span class="badge bg-warning text-dark">۶۰-۷۵% قابل قبول</span>
+            <span class="badge bg-danger">&lt;۶۰% نیاز به بهبود</span>
+            <span class="vr"></span>
+            <small class="text-muted">کیفیت WD: بر اساس cuts/100km | کیفیت TFO: بر اساس پارگی/بچ | کیفیت HS: نرخ قبولی</small>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+var oeeData  = {{ chart_data|safe }};
+var trendData = {{ trend_data|safe }};
+
+// رنگ بر اساس بخش
+const sectionColors = {
+    'رینگ':        '#4361ee',
+    'بوبین‌پیچی':  '#0891b2',
+    'دولاتابی':    '#7c3aed',
+    'هیت‌ست':      '#dc2626',
+};
+const barColors = oeeData.map(d => sectionColors[d.section] || '#6c757d');
+
+new ApexCharts(document.querySelector("#chart-oee-machines"), {
+    chart: {type:'bar', height:300, fontFamily:'Vazirmatn FD', toolbar:{show:false}},
+    series: [{name:'OEE%', data: oeeData.map(d => d.value)}],
+    xaxis: {categories: oeeData.map(d => d.label)},
+    colors: barColors,
+    yaxis: {max:100, min:0, title:{text:'OEE (%)'}},
+    plotOptions: {bar:{borderRadius:4, columnWidth:'60%', distributed:true}},
+    legend: {show:false},
+    dataLabels: {enabled:true, formatter: v => v + '%'},
+    annotations: {
+        yaxis: [
+            {y:75, borderColor:'#198754', label:{text:'عالی ≥۷۵%', style:{color:'#198754'}}},
+            {y:60, borderColor:'#ffc107', label:{text:'قابل قبول ≥۶۰%', style:{color:'#ffc107'}}},
+        ]
+    },
+}).render();
+
+new ApexCharts(document.querySelector("#chart-eff-trend"), {
+    chart: {type:'line', height:300, fontFamily:'Vazirmatn FD', toolbar:{show:false}},
+    series: [
+        {name:'رینگ',       data: trendData.map(d => d.ring    || 0)},
+        {name:'بوبین‌پیچی', data: trendData.map(d => d.winding || 0)},
+        {name:'دولاتابی',   data: trendData.map(d => d.tfo     || 0)},
+    ],
+    xaxis: {categories: trendData.map(d => d.date)},
+    colors: ['#4361ee','#0891b2','#7c3aed'],
+    stroke: {curve:'smooth', width:3},
+    yaxis: {max:100, min:0, title:{text:'راندمان (%)'}},
+    legend: {position:'top'},
+}).render();
+</script>
+{% endblock %}

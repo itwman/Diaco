@@ -1,0 +1,148 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block header_actions %}
+<a href="{% url 'orders:order_create' %}" class="btn btn-primary btn-sm">
+    <i class="ti ti-plus me-1"></i> سفارش جدید
+</a>
+{% endblock %}
+
+{# آمار بالای جدول #}
+{% block extra_before_table %}
+<div class="card-header border-top">
+    {# کارت‌های آماری #}
+    <div class="row g-2 mb-3">
+        <div class="col-4">
+            <div class="text-center p-2 rounded bg-light-primary">
+                <div class="f-w-700 text-primary f-s-20">{{ count_in_production }}</div>
+                <div class="text-muted f-s-12">در حال تولید</div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="text-center p-2 rounded bg-light-warning">
+                <div class="f-w-700 text-warning f-s-20">{{ count_pending }}</div>
+                <div class="text-muted f-s-12">در انتظار</div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="text-center p-2 rounded {% if count_overdue %}bg-light-danger{% else %}bg-light-success{% endif %}">
+                <div class="f-w-700 {% if count_overdue %}text-danger{% else %}text-success{% endif %} f-s-20">
+                    {{ count_overdue }}
+                </div>
+                <div class="text-muted f-s-12">تأخیردار</div>
+            </div>
+        </div>
+    </div>
+
+    {# فیلترها #}
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="ti ti-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="شماره سفارش، مشتری، نوع نخ..."
+                       value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">همه وضعیت‌ها</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="priority" class="form-select form-select-sm">
+                <option value="">همه اولویت‌ها</option>
+                {% for val, label in priority_choices %}
+                <option value="{{ val }}" {% if priority_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary btn-sm">اعمال</button>
+            {% if search_query or status_filter or priority_filter %}
+            <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary btn-sm">پاک</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+<th>#</th>
+<th>شماره سفارش</th>
+<th>مشتری</th>
+<th>نوع نخ</th>
+<th>مقدار (kg)</th>
+<th>پیشرفت</th>
+<th>اولویت</th>
+<th>وضعیت</th>
+<th>تحویل</th>
+<th>عملیات</th>
+{% endblock %}
+
+{% block table_body %}
+{% for order in object_list %}
+<tr>
+    <td class="text-muted">{{ forloop.counter }}</td>
+    <td>
+        <a href="{% url 'orders:order_detail' order.pk %}" class="f-w-600 text-decoration-none">
+            {{ order.order_number }}
+        </a>
+    </td>
+    <td>
+        <a href="{% url 'orders:customer_detail' order.customer.pk %}" class="text-decoration-none">
+            {{ order.customer.name }}
+        </a>
+    </td>
+    <td>{{ order.yarn_type|default:"—" }} {% if order.yarn_count %}Ne {{ order.yarn_count }}{% endif %}</td>
+    <td class="f-w-600">{{ order.quantity_kg|floatformat:0 }}</td>
+    <td style="min-width:110px;">
+        <div class="progress" style="height:6px;">
+            <div class="progress-bar {% if order.progress_pct < 30 %}bg-danger{% elif order.progress_pct < 70 %}bg-warning{% else %}bg-success{% endif %}"
+                 style="width:{{ order.progress_pct }}%"></div>
+        </div>
+        <small class="text-muted">{{ order.progress_pct }}%</small>
+    </td>
+    <td>
+        {% if order.priority == 'urgent' %}
+        <span class="badge bg-danger">فوری</span>
+        {% elif order.priority == 'high' %}
+        <span class="badge bg-warning text-dark">بالا</span>
+        {% elif order.priority == 'normal' %}
+        <span class="badge bg-light-primary text-primary">عادی</span>
+        {% else %}
+        <span class="badge bg-secondary">کم</span>
+        {% endif %}
+    </td>
+    <td>
+        <span class="badge
+            {% if order.status == 'in_production' %}bg-light-primary text-primary
+            {% elif order.status == 'delivered' %}bg-light-success text-success
+            {% elif order.status == 'cancelled' %}bg-light-danger text-danger
+            {% elif order.status == 'quality_check' %}bg-light-warning text-warning
+            {% elif order.status == 'ready' %}bg-light-info text-info
+            {% else %}bg-light-secondary text-secondary{% endif %}">
+            {{ order.get_status_display }}
+        </span>
+    </td>
+    <td {% if order.is_overdue %}class="text-danger f-w-600"{% endif %}>
+        {{ order.delivery_date|to_jalali|default:"—" }}
+        {% if order.is_overdue %}<i class="ti ti-alert-triangle ms-1"></i>{% endif %}
+    </td>
+    <td>
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-outline-primary" title="جزئیات">
+                <i class="ti ti-eye"></i>
+            </a>
+            {% if order.status not in 'delivered,cancelled' %}
+            <a href="{% url 'orders:order_edit' order.pk %}" class="btn btn-outline-secondary" title="ویرایش">
+                <i class="ti ti-edit"></i>
+            </a>
+            {% endif %}
+        </div>
+    </td>
+</tr>
+{% endfor %}
+{% endblock %}

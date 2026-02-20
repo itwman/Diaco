@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}{{ line.code }} - {{ line.name }} | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0">
+                    <i class="ti ti-building-factory-2 text-primary me-2"></i>
+                    {{ line.name }}
+                    <small class="text-muted">({{ line.code }})</small>
+                </h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'core:line_list' %}">خطوط تولید</a></li>
+                    <li class="breadcrumb-item active">{{ line.code }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- ── اطلاعات کلی ──────────────────────────────── -->
+<div class="row mb-4">
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card mb-0 h-100">
+            <div class="card-body text-center">
+                <span class="h-50 w-50 d-flex-center b-r-10 mx-auto mb-2
+                    {% if line.status == 'active' %}bg-light-success text-success
+                    {% elif line.status == 'maintenance' %}bg-light-warning text-warning
+                    {% else %}bg-light-secondary text-secondary{% endif %}">
+                    <i class="ti ti-building-factory-2 f-s-22"></i>
+                </span>
+                {% if line.status == 'active' %}
+                <span class="badge bg-success">● فعال</span>
+                {% elif line.status == 'maintenance' %}
+                <span class="badge bg-warning">◆ تعمیر</span>
+                {% else %}
+                <span class="badge bg-secondary">○ غیرفعال</span>
+                {% endif %}
+                <p class="text-muted f-s-13 mt-1 mb-0">وضعیت خط</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card mb-0 h-100">
+            <div class="card-body text-center">
+                <h3 class="text-primary mb-1">{{ machine_stats.total }}</h3>
+                <p class="mb-0">
+                    <span class="text-success f-w-600">{{ machine_stats.active }} فعال</span>
+                    {% if machine_stats.maintenance > 0 %}
+                    | <span class="text-warning f-w-600">{{ machine_stats.maintenance }} تعمیری</span>
+                    {% endif %}
+                </p>
+                <p class="text-muted f-s-13 mt-1 mb-0">ماشین‌آلات</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card mb-0 h-100">
+            <div class="card-body text-center">
+                <h5 class="text-info mb-1">{{ line.product_type|default:"-" }}</h5>
+                <p class="text-muted f-s-13 mt-1 mb-0">نوع محصول</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card mb-0 h-100">
+            <div class="card-body text-center">
+                <h3 class="text-warning mb-1">{{ line.target_capacity_kg|default:"—" }}</h3>
+                <p class="text-muted f-s-13 mt-1 mb-0">ظرفیت هدف (kg/شیفت)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── ماشین‌آلات ──────────────────────────────── -->
+    <div class="col-lg-8 mb-4">
+        <div class="card mb-0">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0"><i class="ti ti-settings-2 me-2"></i>ماشین‌آلات خط</h5>
+                <span class="badge bg-light-primary f-s-13">{{ machine_stats.total }} دستگاه</span>
+            </div>
+            <div class="card-body p-0">
+                {% for type_name, machines in machine_groups.items %}
+                <div class="px-3 py-2 bg-light-secondary border-bottom">
+                    <strong>{{ type_name }}</strong>
+                    <span class="badge bg-primary ms-1">{{ machines|length }}</span>
+                </div>
+                {% for m in machines %}
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                    <div>
+                        <span class="f-w-600">{{ m.code }}</span>
+                        <span class="text-muted ms-2">{{ m.name }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if m.manufacturer %}
+                        <small class="text-muted">{{ m.manufacturer }}</small>
+                        {% endif %}
+                        {% if m.status == 'active' %}
+                        <span class="badge bg-light-success text-success">فعال</span>
+                        {% elif m.status == 'maintenance' %}
+                        <span class="badge bg-light-warning text-warning">تعمیری</span>
+                        {% elif m.status == 'inactive' %}
+                        <span class="badge bg-light-secondary text-secondary">غیرفعال</span>
+                        {% else %}
+                        <span class="badge bg-light-danger text-danger">از رده خارج</span>
+                        {% endif %}
+                        <a href="{% url 'core:machine_edit' pk=m.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-1">
+                            <i class="ti ti-edit f-s-14"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+                {% empty %}
+                <div class="text-center text-muted py-4">ماشینی تعریف نشده</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── شیفت‌ها + مدیر ────────────────────────── -->
+    <div class="col-lg-4 mb-4">
+        <!-- مدیر خط -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="ti ti-user-check me-2"></i>مدیر خط</h5>
+            </div>
+            <div class="card-body">
+                {% if line.line_manager %}
+                <div class="d-flex align-items-center">
+                    <span class="h-40 w-40 d-flex-center b-r-50 bg-light-primary text-primary me-2">
+                        {{ line.line_manager.first_name|first }}
+                    </span>
+                    <div>
+                        <strong>{{ line.line_manager.get_full_name }}</strong>
+                        <div class="text-muted f-s-13">{{ line.line_manager.get_role_display }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <span class="text-muted">تعیین نشده</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- شیفت‌ها -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="ti ti-clock me-2"></i>شیفت‌ها</h5>
+            </div>
+            <div class="card-body p-0">
+                {% for s in shifts %}
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                    <div>
+                        <span class="f-w-600">{{ s.name }}</span>
+                        <span class="text-muted f-s-13 ms-1">({{ s.code }})</span>
+                    </div>
+                    <div class="text-muted f-s-13">
+                        {{ s.start_time|time:"H:i" }} — {{ s.end_time|time:"H:i" }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-3">شیفتی تعریف نشده</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- سرشیفت‌ها -->
+        <div class="card mb-0">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="ti ti-users me-2"></i>سرشیفت‌ها</h5>
+            </div>
+            <div class="card-body p-0">
+                {% for a in assignments %}
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                    <div>
+                        <span class="f-w-600">{{ a.shift.name }}</span>
+                    </div>
+                    <div>
+                        {% if a.supervisor %}
+                        <span>{{ a.supervisor.get_full_name }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                        {% if a.is_active %}
+                        <span class="badge bg-light-success text-success ms-1">فعال</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-3">سرشیفتی تعیین نشده</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── دکمه‌ها ──────────────────────────────────── -->
+<div class="d-flex gap-2 mb-4">
+    <a href="{% url 'core:line_edit' pk=line.pk %}" class="btn btn-primary">
+        <i class="ti ti-edit"></i> ویرایش خط
+    </a>
+    <a href="{% url 'dashboard:line_monitor' %}" class="btn btn-success">
+        <i class="ti ti-activity-heartbeat"></i> مانیتورینگ زنده
+    </a>
+    <a href="{% url 'core:line_list' %}" class="btn btn-outline-secondary">
+        <i class="ti ti-arrow-right"></i> بازگشت
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends "reports/report_base.html" %}
+{% block report_content %}
+
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card text-center" style="border-top:3px solid #7c3aed;">
+            <div class="card-body py-3">
+                <p class="text-muted f-s-12 mb-1">تعداد بچ</p>
+                <h3 class="f-w-700 mb-0" style="color:#7c3aed;">{{ agg.total_batches }}</h3>
+                <small class="text-muted">{{ agg.completed }} تکمیل</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card text-center" style="border-top:3px solid #7c3aed;">
+            <div class="card-body py-3">
+                <p class="text-muted f-s-12 mb-1">خروجی کل</p>
+                <h3 class="f-w-700 mb-0">{{ agg.total_output_kg|floatformat:1 }}</h3>
+                <small class="text-muted">kg</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card text-center" style="border-top:3px solid {% if agg.total_breakage > 20 %}#dc3545{% elif agg.total_breakage > 10 %}#f59e0b{% else %}#16a34a{% endif %};">
+            <div class="card-body py-3">
+                <p class="text-muted f-s-12 mb-1">کل پارگی</p>
+                <h3 class="f-w-700 mb-0 {% if agg.total_breakage > 20 %}text-danger{% elif agg.total_breakage > 10 %}text-warning{% else %}text-success{% endif %}">
+                    {{ agg.total_breakage|default:0 }}
+                </h3>
+                <small class="text-muted">بار</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card text-center" style="border-top:3px solid {% if waste_pct > 5 %}#dc3545{% else %}#16a34a{% endif %};">
+            <div class="card-body py-3">
+                <p class="text-muted f-s-12 mb-1">ضایعات</p>
+                <h3 class="f-w-700 mb-0 {% if waste_pct > 5 %}text-danger{% else %}text-success{% endif %}">{{ waste_pct }}%</h3>
+                <small class="text-muted">{{ agg.total_waste_kg|floatformat:1 }} kg</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نمودارها -->
+<div class="row mb-4">
+    <div class="col-md-7">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-chart-line me-1"></i> روند راندمان و پارگی روزانه</h6></div>
+            <div class="card-body"><div id="chart-tfo-trend" style="height:280px;"></div></div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-chart-donut me-1"></i> توزیع جهت تاب</h6></div>
+            <div class="card-body"><div id="chart-tfo-twist" style="height:280px;"></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- اطلاعات تاب -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-infinity me-1"></i> پارامترهای تاب</h6></div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-4">
+                <div class="f-s-28 f-w-700" style="color:#7c3aed;">{{ agg.avg_tpm|floatformat:0|default:"—" }}</div>
+                <div class="text-muted f-s-13">میانگین تاب (TPM)</div>
+            </div>
+            <div class="col-md-4">
+                {% for k, v in twist_dist.items %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="f-s-13">{{ k }}</span>
+                    <span class="badge bg-light-secondary f-s-13">{{ v }} بچ</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <div class="f-s-28 f-w-700 {% if agg.avg_efficiency >= 90 %}text-success{% elif agg.avg_efficiency >= 70 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ agg.avg_efficiency|floatformat:1|default:"—" }}%
+                </div>
+                <div class="text-muted f-s-13">میانگین راندمان</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- عملکرد ماشین -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="ti ti-cpu me-1"></i> عملکرد به تفکیک ماشین</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>ماشین</th><th>تعداد بچ</th><th>خروجی (kg)</th><th>میانگین TPM</th><th>پارگی میانگین</th><th>راندمان%</th></tr>
+                </thead>
+                <tbody>
+                    {% for m in by_machine %}
+                    <tr>
+                        <td><strong>{{ m.machine__code }}</strong></td>
+                        <td>{{ m.count }}</td>
+                        <td>{{ m.total_output|floatformat:1 }}</td>
+                        <td>{{ m.avg_tpm|floatformat:0 }}</td>
+                        <td>
+                            <span class="{% if m.avg_breakage > 5 %}text-danger{% elif m.avg_breakage > 2 %}text-warning{% else %}text-success{% endif %}">
+                                {{ m.avg_breakage|floatformat:1 }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:6px;">
+                                    <div class="progress-bar {% if m.avg_eff >= 90 %}bg-success{% elif m.avg_eff >= 70 %}bg-warning{% else %}bg-danger{% endif %}"
+                                         style="width:{{ m.avg_eff|floatformat:0 }}%"></div>
+                                </div>
+                                <span>{{ m.avg_eff|floatformat:1 }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">داده‌ای یافت نشد</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- آخرین بچ‌ها -->
+<div class="card">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-list me-1"></i> آخرین بچ‌های ثبت‌شده</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>بچ</th><th>تاریخ</th><th>ماشین</th><th>جهت تاب</th><th>TPM</th><th>خروجی (kg)</th><th>پارگی</th><th>وضعیت</th></tr>
+                </thead>
+                <tbody>
+                    {% for b in recent_batches %}
+                    <tr>
+                        <td class="f-w-600">{{ b.batch_number }}</td>
+                        <td>{{ b.production_date }}</td>
+                        <td>{{ b.machine.code }}</td>
+                        <td>
+                            {% if b.twist_direction == 'S' %}<span class="badge bg-primary">S</span>
+                            {% elif b.twist_direction == 'Z' %}<span class="badge bg-info">Z</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>{{ b.twist_tpm|default:"—" }}</td>
+                        <td>{{ b.output_weight_kg|floatformat:1 }}</td>
+                        <td>
+                            <span class="{% if b.breakage_count > 5 %}text-danger{% elif b.breakage_count > 2 %}text-warning{% else %}text-success{% endif %}">
+                                {{ b.breakage_count|default:0 }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if b.status == 'completed' %}<span class="badge bg-success">تکمیل</span>
+                            {% elif b.status == 'in_progress' %}<span class="badge bg-primary">در جریان</span>
+                            {% else %}<span class="badge bg-secondary">{{ b.get_status_display }}</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">داده‌ای یافت نشد</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block report_js %}
+<script>
+var trendData = {{ trend_data|safe }};
+var twistData = {{ twist_chart|safe }};
+
+new ApexCharts(document.querySelector("#chart-tfo-trend"), {
+    chart: {type:'line', height:280, fontFamily:'Vazirmatn FD', toolbar:{show:false}},
+    series: [
+        {name:'راندمان %', data: trendData.map(d=>d.efficiency)},
+        {name:'پارگی (بار)', data: trendData.map(d=>d.breakage)},
+    ],
+    xaxis: {categories: trendData.map(d=>d.date), labels:{rotate:-45, style:{fontSize:'10px'}}},
+    colors: ['#7c3aed','#dc3545'],
+    stroke: {curve:'smooth', width:[2,2]},
+    yaxis: [{title:{text:'راندمان%'}}, {opposite:true, title:{text:'پارگی'}}],
+    legend: {position:'top'},
+}).render();
+
+new ApexCharts(document.querySelector("#chart-tfo-twist"), {
+    chart: {type:'pie', height:280, fontFamily:'Vazirmatn FD'},
+    series: twistData.map(d=>d.value),
+    labels: twistData.map(d=>d.label),
+    colors: ['#7c3aed','#a78bfa'],
+    legend: {position:'bottom'},
+}).render();
+</script>
+{% endblock %}

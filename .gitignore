@@ -1,0 +1,67 @@
+# ══════════════════════════════════════════════════════════════
+#  DIACO MES — .gitignore
+#  آخرین بروزرسانی: ۱۴۰۴/۱۲/۰۱
+# ══════════════════════════════════════════════════════════════
+
+# ─── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.pyo
+
+# ─── Django ────────────────────────────────────────────────
+staticfiles/
+media/
+logs/
+*.log
+db.sqlite3
+
+# ─── Virtual env ───────────────────────────────────────────
+venv/
+.venv/
+
+# ─── Environment ───────────────────────────────────────────
+.env
+*.env.local
+
+# ─── RTL Template — صفحات نمونه (غیرضروری) ────────────────
+RTL/*.html
+RTL/rtl/
+RTL/.vscode/
+
+# ─── تصاویر Hash‌دار Webpack در css/ (~8 MB) ───────────────
+RTL/assets/css/*.png
+RTL/assets/css/*.jpg
+
+# ─── Database dumps ────────────────────────────────────────
+*.sqlite3
+*.sql
+*.dump
+
+# ─── IDE ───────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── OS ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── BAT files موقت ────────────────────────────────────────
+check_phase_*.bat
+run_phase_*.bat
+run_migrate_*.bat
+migrate_fix.bat
+test_phase_*.bat
+setup.bat
+restart_server.bat
+
+# ─── مستندات و اسناد داخلی (روی سرور لازم نیست) ───────────
+training/
+
+# ─── UPHeat (پروژه موقت) ───────────────────────────────────
+UPHeat/

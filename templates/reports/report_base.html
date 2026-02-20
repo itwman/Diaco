@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+{% load jalali_tags %}
+
+{% block title %}{{ page_title }} | دیاکو MES{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'vendor/apexcharts/apexcharts.css' %}" rel="stylesheet">
+<link href="https://unpkg.com/persian-datepicker@latest/dist/css/persian-datepicker.min.css" rel="stylesheet">
+<style>
+    .datepicker-plot-area { font-family: 'Vazirmatn FD', sans-serif !important; }
+    .pwt-btn-today, .pwt-btn-calendar { font-family: 'Vazirmatn FD', sans-serif !important; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title"><h4 class="mb-0">{{ page_title }}</h4></div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- فیلتر تاریخ شمسی -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-3 align-items-end" id="report-filter-form">
+            <div class="col-auto">
+                <label class="form-label f-s-13">خط تولید</label>
+                <select name="line" class="form-select">
+                    <option value="">همه خطوط</option>
+                    {% for ln in lines %}
+                    <option value="{{ ln.id }}" {% if selected_line.id == ln.id %}selected{% endif %}>{{ ln.code }} - {{ ln.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label f-s-13">از تاریخ</label>
+                <input type="text" class="form-control jalali-picker" id="date-from-display"
+                       value="{{ date_from|to_jalali }}" autocomplete="off" placeholder="۱۴۰۴/۱۱/۲۱"
+                       style="min-width:140px;">
+                <input type="hidden" name="from" id="date-from-hidden" value="{{ date_from|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label f-s-13">تا تاریخ</label>
+                <input type="text" class="form-control jalali-picker" id="date-to-display"
+                       value="{{ date_to|to_jalali }}" autocomplete="off" placeholder="۱۴۰۴/۱۱/۲۸"
+                       style="min-width:140px;">
+                <input type="hidden" name="to" id="date-to-hidden" value="{{ date_to|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-filter me-1"></i>اعمال</button>
+            </div>
+            {% block export_buttons %}{% endblock %}
+        </form>
+    </div>
+</div>
+
+{% block report_content %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/apexcharts/apexcharts.min.js' %}"></script>
+<script src="https://unpkg.com/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script>
+$(document).ready(function(){
+    // تاریخ شروع
+    $("#date-from-display").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValueType: 'persian',
+        calendar: { persian: { locale: 'fa' } },
+        onSelect: function(unix){
+            var pd = new persianDate(unix);
+            var gd = pd.toCalendar('gregorian');
+            var m = ('0' + gd.month()).slice(-2);
+            var d = ('0' + gd.date()).slice(-2);
+            $('#date-from-hidden').val(gd.year() + '-' + m + '-' + d);
+        }
+    });
+    // تاریخ پایان
+    $("#date-to-display").persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValueType: 'persian',
+        calendar: { persian: { locale: 'fa' } },
+        onSelect: function(unix){
+            var pd = new persianDate(unix);
+            var gd = pd.toCalendar('gregorian');
+            var m = ('0' + gd.month()).slice(-2);
+            var d = ('0' + gd.date()).slice(-2);
+            $('#date-to-hidden').val(gd.year() + '-' + m + '-' + d);
+        }
+    });
+});
+</script>
+{% block report_js %}{% endblock %}
+{% endblock %}

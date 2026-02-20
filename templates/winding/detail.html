@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load jalali_tags %}
+
+{% block title %}{{ page_title }} | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0">{{ page_title }}</h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item">{{ breadcrumb_parent }}</li>
+                    <li class="breadcrumb-item"><a href="{% url 'winding:list' %}">لیست</a></li>
+                    <li class="breadcrumb-item active">{{ prod.batch_number }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+
+    {# ── ستون چپ: اطلاعات اصلی ────────────────────────────── #}
+    <div class="col-xl-8">
+
+        {# هدر بچ #}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h4 class="mb-1 font-monospace text-primary">{{ prod.batch_number }}</h4>
+                        <div class="text-muted f-s-13">
+                            <i class="ti ti-calendar me-1"></i>{{ prod.production_date|to_jalali }}
+                            &nbsp;|&nbsp;
+                            <i class="ti ti-device-desktop me-1"></i>{{ prod.machine.code }} — {{ prod.machine.name }}
+                            &nbsp;|&nbsp;
+                            <i class="ti ti-user me-1"></i>{{ prod.operator.get_full_name }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        {# badge وضعیت #}
+                        {% if prod.status == 'in_progress' %}
+                        <span class="badge bg-warning f-s-13 px-3 py-2">در جریان</span>
+                        {% elif prod.status == 'completed' %}
+                        <span class="badge bg-success f-s-13 px-3 py-2">تکمیل شده ✓</span>
+                        {% elif prod.status == 'quality_hold' %}
+                        <span class="badge bg-danger f-s-13 px-3 py-2">توقف کیفی</span>
+                        {% else %}
+                        <span class="badge bg-secondary f-s-13 px-3 py-2">{{ prod.get_status_display }}</span>
+                        {% endif %}
+                        <a href="{% url 'winding:edit' prod.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="ti ti-pencil me-1"></i> ویرایش
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# جدول اطلاعات #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">جزئیات بچ</h6></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <tbody>
+                        <tr>
+                            <th class="bg-light" style="width:35%">بچ رینگ ورودی</th>
+                            <td>
+                                {% if prod.spinning_production %}
+                                <span class="font-monospace">{{ prod.spinning_production.batch_number }}</span>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <th class="bg-light">سفارش</th>
+                            <td>
+                                {% if prod.order %}
+                                {{ prod.order.order_number }} — {{ prod.order.customer.name }}
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">شیفت</th>
+                            <td>{{ prod.shift.name }}</td>
+                            <th class="bg-light">خط تولید</th>
+                            <td>{{ prod.production_line.code|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">تعداد Cop ورودی</th>
+                            <td>{{ prod.input_cops|default:"—" }}</td>
+                            <th class="bg-light">وزن ورودی</th>
+                            <td>{% if prod.input_weight_kg %}{{ prod.input_weight_kg }} kg{% else %}—{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">سرعت (m/min)</th>
+                            <td>{{ prod.winding_speed_mpm|default:"—" }}</td>
+                            <th class="bg-light">کشش (cN)</th>
+                            <td>{{ prod.tension_setting_cn|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">Yarn Clearer</th>
+                            <td>{{ prod.yarn_clearer_type|default:"—" }}</td>
+                            <th class="bg-light">نوع بوبین</th>
+                            <td>{{ prod.get_package_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">وزن هر بوبین</th>
+                            <td>{% if prod.package_weight_kg %}{{ prod.package_weight_kg }} kg{% else %}—{% endif %}</td>
+                            <th class="bg-light">تعداد بوبین خروجی</th>
+                            <td>{{ prod.output_packages|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">وزن خروجی کل</th>
+                            <td class="f-w-700 text-success">{% if prod.output_weight_kg %}{{ prod.output_weight_kg }} kg{% else %}—{% endif %}</td>
+                            <th class="bg-light">ضایعات</th>
+                            <td class="{% if prod.waste_weight_kg %}text-warning{% endif %}">
+                                {% if prod.waste_weight_kg %}{{ prod.waste_weight_kg }} kg
+                                    {% if prod.waste_pct %}<small class="text-muted">({{ prod.waste_pct }}%)</small>{% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# بچ‌های TFO مرتبط #}
+        {% if tfo_batches %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="ti ti-arrow-left me-2 text-purple"></i>بچ‌های دولاتابی TFO مرتبط</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>شماره بچ</th>
+                            <th>ماشین</th>
+                            <th>تاب (TPM)</th>
+                            <th>خروجی</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tfo in tfo_batches %}
+                        <tr>
+                            <td><a href="{% url 'tfo:detail' tfo.pk %}" class="font-monospace text-primary">{{ tfo.batch_number }}</a></td>
+                            <td>{{ tfo.machine.code }}</td>
+                            <td>{{ tfo.twist_tpm }}</td>
+                            <td>{{ tfo.output_weight_kg|default:"—" }}</td>
+                            <td><span class="badge bg-light-secondary text-secondary f-s-11">{{ tfo.get_status_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    {# ── ستون راست: KPI + وضعیت ───────────────────────────── #}
+    <div class="col-xl-4">
+
+        {# شاخص‌های کیفیت #}
+        <div class="card mb-3">
+            <div class="card-header bg-light-warning">
+                <h6 class="mb-0 text-warning"><i class="ti ti-star me-2"></i>شاخص‌های کیفیت</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-6">
+                        <div class="f-s-11 text-muted">Cuts/100km</div>
+                        {% if prod.cuts_per_100km is not None %}
+                        <div class="f-w-700 f-s-20
+                            {% if prod.cuts_per_100km < 20 %}text-success
+                            {% elif prod.cuts_per_100km < 40 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ prod.cuts_per_100km }}
+                        </div>
+                        <div class="f-s-11">{{ prod.quality_grade }}</div>
+                        {% else %}<div class="text-muted">—</div>{% endif %}
+                    </div>
+                    <div class="col-6">
+                        <div class="f-s-11 text-muted">Splices/100km</div>
+                        <div class="f-w-700 f-s-20 text-info">{{ prod.splices_per_100km|default:"—" }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="f-s-11 text-muted mb-1">راندمان</div>
+                        {% if prod.efficiency_pct %}
+                        <div class="progress mb-1" style="height:10px;">
+                            <div class="progress-bar {% if prod.efficiency_pct >= 90 %}bg-success{% elif prod.efficiency_pct >= 75 %}bg-warning{% else %}bg-danger{% endif %}"
+                                 style="width:{{ prod.efficiency_pct }}%"></div>
+                        </div>
+                        <div class="f-w-700">{{ prod.efficiency_pct|floatformat:1 }}%</div>
+                        {% else %}<div class="text-muted">—</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# تغییر وضعیت #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">تغییر وضعیت</h6></div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if prod.status == 'in_progress' %}
+                    <button class="btn btn-success" onclick="changeStatus('completed')">
+                        <i class="ti ti-check me-2"></i>تکمیل شده
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="changeStatus('quality_hold')">
+                        <i class="ti ti-alert-triangle me-2"></i>توقف کیفی
+                    </button>
+                    {% elif prod.status == 'quality_hold' %}
+                    <button class="btn btn-primary" onclick="changeStatus('in_progress')">
+                        <i class="ti ti-play me-2"></i>ادامه تولید
+                    </button>
+                    {% elif prod.status == 'completed' %}
+                    <div class="alert alert-success py-2 mb-0">
+                        <i class="ti ti-check-circle me-2"></i>بچ تکمیل شده است
+                    </div>
+                    {% endif %}
+                    {% if prod.status != 'cancelled' and prod.status != 'completed' %}
+                    <button class="btn btn-outline-secondary btn-sm" onclick="changeStatus('cancelled')">
+                        <i class="ti ti-x me-2"></i>لغو
+                    </button>
+                    {% endif %}
+                </div>
+                <div id="statusMsg" class="mt-2"></div>
+            </div>
+        </div>
+
+        {# یادداشت #}
+        {% if prod.notes %}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">یادداشت</h6></div>
+            <div class="card-body text-muted">{{ prod.notes }}</div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function changeStatus(newStatus) {
+    const resp = await fetch('{% url "winding:status" prod.pk %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `status=${newStatus}`,
+    });
+    const data = await resp.json();
+    if (data.ok) {
+        document.getElementById('statusMsg').innerHTML =
+            `<div class="alert alert-success py-1 f-s-12">${data.message}</div>`;
+        setTimeout(() => location.reload(), 800);
+    } else {
+        document.getElementById('statusMsg').innerHTML =
+            `<div class="alert alert-danger py-1 f-s-12">${data.error}</div>`;
+    }
+}
+</script>
+{% endblock %}

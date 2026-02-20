@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}نقشه کارگاه | دیاکو MES{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══ Floor Map Styles ═══════════════════════════════ */
+.floor-map-page {
+    padding: 0;
+}
+
+/* ── KPI Bar ──────────────────────────────────────── */
+.map-kpi-bar {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.map-kpi {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+.map-kpi .kpi-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.map-kpi .kpi-count {
+    font-weight: 800;
+    font-size: 1.1rem;
+    margin: 0 4px;
+}
+.dot-good { background: #22c55e; }
+.dot-warning { background: #eab308; }
+.dot-critical { background: #ef4444; }
+.dot-maintenance { background: #f97316; }
+.dot-idle { background: #9ca3af; }
+
+.map-meta {
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+.map-meta .live-badge {
+    background: #22c55e;
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    animation: pulse-live 2s infinite;
+}
+@keyframes pulse-live {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ── SVG Container ────────────────────────────────── */
+.svg-wrapper {
+    background: #1a1a2e;
+    border-radius: 12px;
+    margin: 0 16px 16px;
+    padding: 16px;
+    overflow: auto;
+    position: relative;
+}
+
+/* ── SVG Styles ───────────────────────────────────── */
+.floor-svg {
+    width: 100%;
+    min-width: 1100px;
+    height: auto;
+}
+
+/* بخش‌های نقشه */
+.zone-border {
+    fill: none;
+    stroke: #2d3748;
+    stroke-width: 1.5;
+    stroke-dasharray: 6,3;
+}
+.zone-label {
+    fill: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Vazirmatn FD', sans-serif;
+    text-anchor: middle;
+}
+.zone-label-en {
+    fill: #4a5568;
+    font-size: 8px;
+    font-weight: 400;
+    font-family: 'Consolas', monospace;
+    text-anchor: middle;
+}
+
+/* ماشین‌ها */
+.machine-rect {
+    rx: 4;
+    ry: 4;
+    stroke-width: 1.5;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.machine-rect:hover {
+    stroke-width: 3;
+    filter: brightness(1.2) drop-shadow(0 0 8px currentColor);
+}
+
+.machine-code {
+    font-size: 7px;
+    font-weight: 700;
+    font-family: 'Consolas', monospace;
+    text-anchor: middle;
+    pointer-events: none;
+    fill: #fff;
+}
+
+/* رنگ‌های Heatmap */
+.heat-good {
+    fill: #16a34a;
+    stroke: #15803d;
+}
+.heat-warning {
+    fill: #ca8a04;
+    stroke: #a16207;
+}
+.heat-critical {
+    fill: #dc2626;
+    stroke: #b91c1c;
+    animation: blink-critical 1.2s infinite;
+}
+.heat-maintenance {
+    fill: #ea580c;
+    stroke: #c2410c;
+    stroke-dasharray: 4,2;
+}
+.heat-idle {
+    fill: #374151;
+    stroke: #4b5563;
+}
+
+@keyframes blink-critical {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* فلش‌های جریان */
+.flow-arrow {
+    fill: none;
+    stroke: #475569;
+    stroke-width: 1;
+    marker-end: url(#arrowhead);
+}
+
+/* ── Tooltip ──────────────────────────────────────── */
+.map-tooltip {
+    position: fixed;
+    display: none;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-width: 240px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 1000;
+    font-size: 0.85rem;
+    direction: rtl;
+    pointer-events: none;
+}
+.map-tooltip.visible {
+    display: block;
+}
+.map-tooltip .tt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f0f0;
+}
+.map-tooltip .tt-name {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #111827;
+}
+.map-tooltip .tt-status {
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+.tt-status-good { background: #dcfce7; color: #166534; }
+.tt-status-warning { background: #fef9c3; color: #854d0e; }
+.tt-status-critical { background: #fee2e2; color: #991b1b; }
+.tt-status-maintenance { background: #ffedd5; color: #9a3412; }
+.tt-status-idle { background: #f3f4f6; color: #374151; }
+
+.map-tooltip .tt-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+.map-tooltip .tt-key { color: #6b7280; }
+.map-tooltip .tt-val { font-weight: 700; color: #111827; }
+
+/* ── Legend ────────────────────────────────────────── */
+.map-legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    padding: 12px;
+    font-size: 0.8rem;
+    color: #64748b;
+    flex-wrap: wrap;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.legend-box {
+    width: 18px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+/* ── Responsive ───────────────────────────────────── */
+@media (max-width: 768px) {
+    .svg-wrapper { margin: 0 8px 8px; padding: 8px; }
+    .map-kpi-bar { padding: 10px; gap: 8px; }
+}
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0"><i class="ti ti-map-2 text-primary me-2"></i>نقشه کارگاه - Heatmap زنده</h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item active">نقشه کارگاه</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="floor-map-page">
+
+    <!-- ── KPI Summary ─────────────────────────────── -->
+    <div class="map-kpi-bar" id="kpi-bar">
+        <div class="map-meta">
+            <span class="live-badge">● زنده</span>
+            <span id="meta-date">--</span>
+            <span id="meta-shift">--</span>
+            <span id="meta-timer" class="text-muted">بروزرسانی تا ۳۰ ثانیه</span>
+        </div>
+        <div class="map-kpi">
+            <span class="kpi-dot dot-good"></span>
+            فعال: <span class="kpi-count" id="kpi-good">0</span>
+        </div>
+        <div class="map-kpi">
+            <span class="kpi-dot dot-warning"></span>
+            هشدار: <span class="kpi-count" id="kpi-warning">0</span>
+        </div>
+        <div class="map-kpi">
+            <span class="kpi-dot dot-critical"></span>
+            بحرانی: <span class="kpi-count" id="kpi-critical">0</span>
+        </div>
+        <div class="map-kpi">
+            <span class="kpi-dot dot-maintenance"></span>
+            تعمیر: <span class="kpi-count" id="kpi-maintenance">0</span>
+        </div>
+        <div class="map-kpi">
+            <span class="kpi-dot dot-idle"></span>
+            خاموش: <span class="kpi-count" id="kpi-idle">0</span>
+        </div>
+    </div>
+
+    <!-- ── SVG Floor Map ───────────────────────────── -->
+    <div class="svg-wrapper">
+        <svg class="floor-svg" viewBox="0 0 1200 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+                </marker>
+                <!-- گرادیان پس‌زمینه بخش‌ها -->
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1f2937" stroke-width="0.3"/>
+                </pattern>
+            </defs>
+
+            <!-- پس‌زمینه شبکه‌ای -->
+            <rect width="1200" height="500" fill="url(#grid)" opacity="0.5"/>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۱: انبار مواد اولیه (Raw Material Storage) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="10" y="10" width="100" height="480" class="zone-border" rx="6"/>
+            <text x="60" y="240" class="zone-label" transform="rotate(-90, 60, 240)">انبار مواد اولیه</text>
+            <text x="60" y="260" class="zone-label-en" transform="rotate(-90, 60, 260)">RAW STORAGE</text>
+
+            <!-- بسته‌های الیاف (نمادین) -->
+            <rect x="25" y="40" width="30" height="20" rx="3" fill="#2d4a3e" stroke="#3e6e57" stroke-width="1"/>
+            <rect x="65" y="40" width="30" height="20" rx="3" fill="#2d4a3e" stroke="#3e6e57" stroke-width="1"/>
+            <rect x="25" y="70" width="30" height="20" rx="3" fill="#2d4a3e" stroke="#3e6e57" stroke-width="1"/>
+            <rect x="65" y="70" width="30" height="20" rx="3" fill="#2d4a3e" stroke="#3e6e57" stroke-width="1"/>
+            <rect x="25" y="100" width="30" height="20" rx="3" fill="#2d4a3e" stroke="#3e6e57" stroke-width="1"/>
+            <rect x="65" y="100" width="30" height="20" rx="3" fill="#2d4a3e" stroke="#3e6e57" stroke-width="1"/>
+
+            <!-- فلش از انبار به حلاجی -->
+            <line x1="110" y1="100" x2="140" y2="100" class="flow-arrow"/>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۲: حلاجی (Blowroom Line) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="120" y="10" width="130" height="230" class="zone-border" rx="6"/>
+            <text x="185" y="30" class="zone-label">حلاجی</text>
+            <text x="185" y="42" class="zone-label-en">BLOWROOM</text>
+
+            <!-- ماشین‌های حلاجی (عمودی) -->
+            <!-- id=machine-{code} از API پر می‌شود -->
+            <g id="zone-blowroom" data-type="blowroom">
+            </g>
+
+            <!-- فلش از حلاجی به کاردینگ -->
+            <line x1="250" y1="130" x2="275" y2="130" class="flow-arrow"/>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۳: کاردینگ (Carding Section) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="260" y="10" width="230" height="340" class="zone-border" rx="6"/>
+            <text x="375" y="30" class="zone-label">کاردینگ</text>
+            <text x="375" y="42" class="zone-label-en">CARDING SECTION</text>
+
+            <g id="zone-carding" data-type="carding">
+            </g>
+
+            <!-- فلش از کاردینگ به پاساژ -->
+            <line x1="490" y1="180" x2="515" y2="180" class="flow-arrow"/>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۴: پاساژ / کشش (Drawing / Passage) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="500" y="10" width="110" height="340" class="zone-border" rx="6"/>
+            <text x="555" y="30" class="zone-label">پاساژ</text>
+            <text x="555" y="42" class="zone-label-en">PASSAGE</text>
+
+            <g id="zone-passage" data-type="passage">
+            </g>
+
+            <!-- فلش از پاساژ به فینیشر -->
+            <line x1="610" y1="180" x2="635" y2="180" class="flow-arrow"/>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۵: فینیشر / روینگ (Roving Frames) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="620" y="10" width="110" height="340" class="zone-border" rx="6"/>
+            <text x="675" y="30" class="zone-label">فینیشر</text>
+            <text x="675" y="42" class="zone-label-en">ROVING / FINISHER</text>
+
+            <g id="zone-finisher" data-type="finisher">
+            </g>
+
+            <!-- فلش از فینیشر به رینگ -->
+            <line x1="730" y1="180" x2="755" y2="180" class="flow-arrow"/>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۶: سالن رینگ (Ring Spinning Hall) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="740" y="10" width="450" height="480" class="zone-border" rx="6"/>
+            <text x="965" y="30" class="zone-label">سالن رینگ</text>
+            <text x="965" y="42" class="zone-label-en">RING SPINNING HALL</text>
+
+            <g id="zone-ring" data-type="ring">
+            </g>
+
+            <!-- ════════════════════════════════════════════ -->
+            <!-- بخش ۷: رنگرزی (اختیاری — پایین نقشه) -->
+            <!-- ════════════════════════════════════════════ -->
+            <rect x="120" y="360" width="490" height="130" class="zone-border" rx="6"/>
+            <text x="365" y="380" class="zone-label">رنگرزی</text>
+            <text x="365" y="392" class="zone-label-en">DYEING SECTION</text>
+
+            <g id="zone-dyeing" data-type="dyeing">
+            </g>
+
+            <!-- فلش جریان تولید اصلی -->
+            <text x="60" y="490" fill="#475569" font-size="9" font-family="Vazirmatn FD" text-anchor="start">
+                جریان تولید: انبار ← حلاجی ← کاردینگ ← پاساژ ← فینیشر ← رینگ
+            </text>
+        </svg>
+    </div>
+
+    <!-- ── Legend ───────────────────────────────────── -->
+    <div class="map-legend">
+        <div class="legend-item"><div class="legend-box" style="background:#16a34a;"></div> راندمان ≥ ۹۰٪ (عالی)</div>
+        <div class="legend-item"><div class="legend-box" style="background:#ca8a04;"></div> ۷۰٪ - ۹۰٪ (هشدار)</div>
+        <div class="legend-item"><div class="legend-box" style="background:#dc2626;"></div> &lt; ۷۰٪ / متوقف (بحرانی)</div>
+        <div class="legend-item"><div class="legend-box" style="background:#ea580c;border:1px dashed #c2410c;"></div> در حال تعمیر</div>
+        <div class="legend-item"><div class="legend-box" style="background:#374151;"></div> خاموش / بدون تولید</div>
+    </div>
+</div>
+
+<!-- ── Tooltip ──────────────────────────────────── -->
+<div class="map-tooltip" id="machine-tooltip">
+    <div class="tt-header">
+        <span class="tt-name" id="tt-name">--</span>
+        <span class="tt-status" id="tt-status">--</span>
+    </div>
+    <div class="tt-row"><span class="tt-key">کد ماشین</span><span class="tt-val" id="tt-code">--</span></div>
+    <div class="tt-row"><span class="tt-key">خط تولید</span><span class="tt-val" id="tt-line">--</span></div>
+    <div class="tt-row"><span class="tt-key">شیفت</span><span class="tt-val" id="tt-shift">--</span></div>
+    <div class="tt-row"><span class="tt-key">راندمان</span><span class="tt-val" id="tt-eff">--</span></div>
+    <div class="tt-row"><span class="tt-key">تولید امروز</span><span class="tt-val" id="tt-output">--</span></div>
+    <div class="tt-row"><span class="tt-key">آخرین بچ</span><span class="tt-val" id="tt-batch">--</span></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+
+    const API_URL = '{% url "dashboard:floor_map_api" %}';
+    const REFRESH = 30;
+    let countdown = REFRESH;
+    let machineDataMap = {};
+
+    // ═══ Layout Config: چیدمان ماشین‌ها در هر بخش ═══
+    // ماشین‌ها بر اساس نوع، در مختصات SVG قرار می‌گیرن
+    const ZONE_CONFIG = {
+        blowroom: { x: 140, y: 60, w: 45, h: 30, cols: 2, gapX: 50, gapY: 40, maxPerCol: 4 },
+        carding:  { x: 280, y: 60, w: 40, h: 28, cols: 4, gapX: 48, gapY: 36, maxPerCol: 7 },
+        passage:  { x: 518, y: 60, w: 40, h: 28, cols: 2, gapX: 45, gapY: 36, maxPerCol: 7 },
+        finisher: { x: 638, y: 60, w: 40, h: 28, cols: 2, gapX: 45, gapY: 36, maxPerCol: 7 },
+        ring:     { x: 760, y: 60, w: 50, h: 22, cols: 5, gapX: 84, gapY: 30, maxPerCol: 14 },
+        dyeing:   { x: 140, y: 400, w: 50, h: 30, cols: 8, gapX: 56, gapY: 40, maxPerCol: 2 },
+    };
+
+    // ═══ Init ═══
+    fetchData();
+    setInterval(tick, 1000);
+
+    // ═══ Fetch Data ═══
+    function fetchData() {
+        fetch(API_URL, { headers: {'X-Requested-With': 'XMLHttpRequest'} })
+        .then(r => r.json())
+        .then(data => {
+            updateKPIs(data.summary);
+            updateMeta(data);
+            renderMachines(data.machines);
+            countdown = REFRESH;
+        })
+        .catch(err => {
+            console.error('Floor map API error:', err);
+        });
+    }
+
+    function tick() {
+        countdown--;
+        document.getElementById('meta-timer').textContent =
+            countdown <= 0 ? 'در حال بروزرسانی...' : `بروزرسانی تا ${countdown} ثانیه`;
+        if (countdown <= 0) fetchData();
+    }
+
+    // ═══ Update KPIs ═══
+    function updateKPIs(s) {
+        document.getElementById('kpi-good').textContent = s.active;
+        document.getElementById('kpi-warning').textContent = s.warning;
+        document.getElementById('kpi-critical').textContent = s.critical;
+        document.getElementById('kpi-maintenance').textContent = s.maintenance;
+        document.getElementById('kpi-idle').textContent = s.idle;
+    }
+
+    function updateMeta(data) {
+        document.getElementById('meta-date').textContent = data.jalali_date;
+        document.getElementById('meta-shift').textContent = data.shift;
+    }
+
+    // ═══ Render Machines into SVG zones ═══
+    function renderMachines(machines) {
+        // گروه‌بندی بر اساس نوع
+        const groups = {};
+        machines.forEach(m => {
+            if (!groups[m.type]) groups[m.type] = [];
+            groups[m.type].push(m);
+            machineDataMap[m.code] = m;
+        });
+
+        // رندر هر بخش
+        Object.keys(ZONE_CONFIG).forEach(type => {
+            const zone = document.getElementById('zone-' + type);
+            if (!zone) return;
+            zone.innerHTML = '';
+
+            const cfg = ZONE_CONFIG[type];
+            const list = groups[type] || [];
+
+            list.forEach((m, i) => {
+                const col = Math.floor(i / cfg.maxPerCol);
+                const row = i % cfg.maxPerCol;
+                const x = cfg.x + col * cfg.gapX;
+                const y = cfg.y + row * cfg.gapY;
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('data-code', m.code);
+                g.setAttribute('class', 'machine-group');
+
+                // مستطیل ماشین
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', x);
+                rect.setAttribute('y', y);
+                rect.setAttribute('width', cfg.w);
+                rect.setAttribute('height', cfg.h);
+                rect.setAttribute('class', `machine-rect heat-${m.heat_level}`);
+
+                // لیبل کد ماشین
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x + cfg.w / 2);
+                text.setAttribute('y', y + cfg.h / 2 + 3);
+                text.setAttribute('class', 'machine-code');
+                text.textContent = m.code;
+
+                g.appendChild(rect);
+                g.appendChild(text);
+
+                // Events
+                g.addEventListener('mouseenter', (e) => showTooltip(e, m));
+                g.addEventListener('mousemove', (e) => moveTooltip(e));
+                g.addEventListener('mouseleave', hideTooltip);
+
+                zone.appendChild(g);
+            });
+        });
+    }
+
+    // ═══ Tooltip ═══
+    const tooltip = document.getElementById('machine-tooltip');
+
+    function showTooltip(e, m) {
+        // بروزرسانی از دیتا
+        const fresh = machineDataMap[m.code] || m;
+        document.getElementById('tt-name').textContent = fresh.name;
+        document.getElementById('tt-code').textContent = fresh.code;
+        document.getElementById('tt-line').textContent = fresh.line_code;
+        document.getElementById('tt-shift').textContent = fresh.shift;
+        document.getElementById('tt-eff').textContent = fresh.efficiency > 0 ? fresh.efficiency + '%' : '-';
+        document.getElementById('tt-output').textContent = fresh.output_kg > 0
+            ? parseFloat(fresh.output_kg).toLocaleString('fa-IR', {maximumFractionDigits:1}) + ' kg'
+            : '-';
+        document.getElementById('tt-batch').textContent = fresh.last_batch;
+
+        // وضعیت
+        const statusEl = document.getElementById('tt-status');
+        statusEl.className = 'tt-status tt-status-' + fresh.heat_level;
+        const statusLabels = {
+            good: 'فعال',
+            warning: 'هشدار',
+            critical: 'بحرانی',
+            maintenance: 'تعمیرات',
+            idle: 'خاموش'
+        };
+        statusEl.textContent = statusLabels[fresh.heat_level] || fresh.status_display;
+
+        tooltip.classList.add('visible');
+        moveTooltip(e);
+    }
+
+    function moveTooltip(e) {
+        let x = e.clientX + 16;
+        let y = e.clientY + 16;
+        // جلوگیری از بیرون رفتن از صفحه
+        if (x + 260 > window.innerWidth) x = e.clientX - 270;
+        if (y + 200 > window.innerHeight) y = e.clientY - 200;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+    }
+
+    function hideTooltip() {
+        tooltip.classList.remove('visible');
+    }
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% load jalali_tags %}
+
+{% block title %}{{ order.order_number }} | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0">{{ order.order_number }}</h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">سفارشات</a></li>
+                    <li class="breadcrumb-item active">{{ order.order_number }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+    {# ── ستون اصلی ────────────────────────────────────────── #}
+    <div class="col-lg-8">
+
+        {# خلاصه اصلی #}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <h4 class="mb-0 f-w-700">{{ order.order_number }}</h4>
+                            {# بج وضعیت #}
+                            <span id="statusBadge" class="badge fs-6
+                                {% if order.status == 'in_production' %}bg-primary
+                                {% elif order.status == 'delivered' %}bg-success
+                                {% elif order.status == 'cancelled' %}bg-danger
+                                {% elif order.status == 'quality_check' %}bg-warning text-dark
+                                {% elif order.status == 'ready' %}bg-info
+                                {% elif order.status == 'sample_sent' %}bg-purple
+                                {% elif order.status == 'customer_approved' %}bg-teal
+                                {% else %}bg-secondary
+                                {% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                            {# اولویت #}
+                            {% if order.priority == 'urgent' %}
+                            <span class="badge bg-danger">🔴 فوری</span>
+                            {% elif order.priority == 'high' %}
+                            <span class="badge bg-warning text-dark">🟠 بالا</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-muted f-s-14">
+                            ثبت: {{ order.created_at|to_jalali }} | توسط {{ order.created_by.get_full_name }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <a href="{% url 'orders:order_edit' order.pk %}" class="btn btn-outline-primary">
+                            <i class="ti ti-edit me-1"></i> ویرایش
+                        </a>
+                    </div>
+                </div>
+
+                {# نوار پیشرفت #}
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="f-s-13 fw-semibold">پیشرفت تولید</span>
+                        <span class="f-s-13 fw-semibold" id="progressText">{{ order.progress_pct }}%</span>
+                    </div>
+                    <div class="progress" style="height:12px; border-radius:6px;">
+                        <div id="progressBar"
+                             class="progress-bar {% if order.progress_pct < 30 %}bg-danger{% elif order.progress_pct < 70 %}bg-warning{% else %}bg-success{% endif %}"
+                             style="width:{{ order.progress_pct }}%; transition:width .5s;"></div>
+                    </div>
+                </div>
+
+                {# نوار گردش کار #}
+                <div class="mt-4">
+                    <div class="d-flex align-items-center gap-0 workflow-bar">
+                        {% with steps="draft,sample_sent,customer_approved,confirmed,in_production,quality_check,ready,delivered" %}
+                        {% for step in steps.split %}
+                        {# این بخش در JS رندر می‌شود #}
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    {# نوار گردش کار — ساده با CSS #}
+                    <div class="workflow-steps mt-2">
+                        <div class="d-flex justify-content-between f-s-11 text-muted">
+                            <span class="{% if order.status == 'draft' %}fw-bold text-secondary{% elif order.status in 'sample_sent,customer_approved,confirmed,in_production,quality_check,ready,delivered' %}text-success{% endif %}">پیش‌نویس</span>
+                            <span class="{% if order.status == 'sample_sent' %}fw-bold text-primary{% elif order.status in 'customer_approved,confirmed,in_production,quality_check,ready,delivered' %}text-success{% endif %}">نمونه ارسال</span>
+                            <span class="{% if order.status == 'customer_approved' %}fw-bold text-primary{% elif order.status in 'confirmed,in_production,quality_check,ready,delivered' %}text-success{% endif %}">تأیید مشتری</span>
+                            <span class="{% if order.status == 'confirmed' %}fw-bold text-primary{% elif order.status in 'in_production,quality_check,ready,delivered' %}text-success{% endif %}">تأیید شده</span>
+                            <span class="{% if order.status == 'in_production' %}fw-bold text-primary{% elif order.status in 'quality_check,ready,delivered' %}text-success{% endif %}">تولید</span>
+                            <span class="{% if order.status == 'quality_check' %}fw-bold text-warning{% elif order.status in 'ready,delivered' %}text-success{% endif %}">کنترل</span>
+                            <span class="{% if order.status == 'ready' %}fw-bold text-info{% elif order.status == 'delivered' %}text-success{% endif %}">آماده</span>
+                            <span class="{% if order.status == 'delivered' %}fw-bold text-success{% endif %}">تحویل</span>
+                        </div>
+                        <div class="progress mt-1" style="height:4px;">
+                            <div class="progress-bar bg-success" style="width:
+                                {% if order.status == 'draft' %}0%
+                                {% elif order.status == 'sample_sent' %}14%
+                                {% elif order.status == 'customer_approved' %}28%
+                                {% elif order.status == 'confirmed' %}42%
+                                {% elif order.status == 'in_production' %}57%
+                                {% elif order.status == 'quality_check' %}71%
+                                {% elif order.status == 'ready' %}85%
+                                {% elif order.status == 'delivered' %}100%
+                                {% else %}0%{% endif %}
+                            ;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# جزئیات سفارش #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="ti ti-info-circle me-2"></i>جزئیات سفارش</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <span class="text-muted f-s-12 d-block">مشتری</span>
+                        <a href="{% url 'orders:customer_detail' order.customer.pk %}" class="f-w-600 text-decoration-none">
+                            {{ order.customer.name }}
+                            {% if order.customer.company %}
+                            <span class="text-muted f-w-400">({{ order.customer.company }})</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted f-s-12 d-block">نوع نخ</span>
+                        <span class="f-w-600">
+                            {{ order.yarn_type|default:"—" }}
+                            {% if order.yarn_count %} Ne {{ order.yarn_count }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted f-s-12 d-block">مقدار سفارش</span>
+                        <span class="f-w-700 f-s-18">{{ order.quantity_kg|floatformat:0 }}</span>
+                        <span class="text-muted f-s-12"> kg</span>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted f-s-12 d-block">تاریخ تحویل</span>
+                        <span class="f-w-600">{{ order.delivery_date|to_jalali|default:"تعیین نشده" }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="text-muted f-s-12 d-block">خط تولید</span>
+                        <span class="f-w-600">{{ order.production_line.name|default:"اختصاص نشده" }}</span>
+                    </div>
+                    {% if order.unit_price %}
+                    <div class="col-md-6">
+                        <span class="text-muted f-s-12 d-block">قیمت واحد</span>
+                        <span class="f-w-600">{{ order.unit_price|floatformat:0 }} ریال/kg</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted f-s-12 d-block">مبلغ کل</span>
+                        <span class="f-w-700 text-success f-s-16">{{ order.total_price|floatformat:0|default:"—" }} ریال</span>
+                    </div>
+                    {% endif %}
+                    {% if order.color_shade %}
+                    <div class="col-md-6">
+                        <span class="text-muted f-s-12 d-block">شید رنگی</span>
+                        <span class="f-w-600">
+                            {% if order.color_shade.color_hex %}
+                            <span style="display:inline-block;width:14px;height:14px;border-radius:50%;
+                                background:{{ order.color_shade.color_hex }};border:1px solid #ccc;
+                                vertical-align:middle;margin-left:5px;"></span>
+                            {% endif %}
+                            {{ order.color_shade.code }} — {{ order.color_shade.name }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if order.notes %}
+                    <div class="col-12">
+                        <span class="text-muted f-s-12 d-block">یادداشت</span>
+                        <span>{{ order.notes }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# ── ستون کناری ───────────────────────────────────────── #}
+    <div class="col-lg-4">
+
+        {# تغییر وضعیت — جریان کاری #}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="ti ti-replace me-2"></i>تغییر وضعیت</h5>
+            </div>
+            <div class="card-body d-grid gap-2" id="statusButtons">
+
+                {% if order.status == 'draft' %}
+                <div class="alert alert-light border f-s-13 py-2">
+                    <i class="ti ti-info-circle me-1"></i>
+                    ابتدا نمونه شید برای مشتری ارسال کنید
+                </div>
+                <button class="btn btn-outline-primary text-start"
+                        onclick="doChangeStatus('sample_sent', 'نمونه شید ارسال شد')">
+                    <i class="ti ti-send me-2"></i>ارسال نمونه به مشتری
+                </button>
+                <button class="btn btn-outline-secondary text-start"
+                        onclick="doChangeStatus('confirmed', 'تأیید شده')">
+                    <i class="ti ti-check me-2"></i>تأیید مستقیم (بدون نمونه)
+                </button>
+
+                {% elif order.status == 'sample_sent' %}
+                <div class="alert alert-info border f-s-13 py-2">
+                    <i class="ti ti-clock me-1"></i>
+                    منتظر تأیید مشتری...
+                </div>
+                <button class="btn btn-outline-success text-start"
+                        onclick="doChangeStatus('customer_approved', 'مشتری تأیید کرد')">
+                    <i class="ti ti-thumb-up me-2"></i>مشتری تأیید کرد ✓
+                </button>
+                <button class="btn btn-outline-warning text-start"
+                        onclick="doChangeStatus('draft', 'برگشت به پیش‌نویس')">
+                    <i class="ti ti-refresh me-2"></i>مشتری تغییر خواست (برگشت)
+                </button>
+
+                {% elif order.status == 'customer_approved' %}
+                <div class="alert alert-success border f-s-13 py-2">
+                    <i class="ti ti-circle-check me-1"></i>
+                    مشتری تأیید کرده — آماده برنامه‌ریزی تولید
+                </div>
+                <button class="btn btn-outline-primary text-start"
+                        onclick="doChangeStatus('confirmed', 'تأیید و ارسال به تولید')">
+                    <i class="ti ti-arrow-left me-2"></i>تأیید و ارسال به تولید
+                </button>
+
+                {% elif order.status == 'confirmed' %}
+                <div class="alert alert-light border f-s-13 py-2">
+                    <i class="ti ti-checks me-1"></i>
+                    سفارش تأیید شده — آماده شروع تولید
+                </div>
+                <button class="btn btn-primary text-start"
+                        onclick="doChangeStatus('in_production', 'شروع تولید')">
+                    <i class="ti ti-player-play me-2"></i>شروع تولید
+                </button>
+
+                {% elif order.status == 'in_production' %}
+                <div class="alert alert-primary border f-s-13 py-2">
+                    <i class="ti ti-settings me-1"></i>
+                    در حال تولید...
+                </div>
+                <button class="btn btn-outline-warning text-start"
+                        onclick="doChangeStatus('quality_check', 'ارسال به کنترل کیفیت')">
+                    <i class="ti ti-microscope me-2"></i>ارسال به کنترل کیفیت
+                </button>
+
+                {% elif order.status == 'quality_check' %}
+                <div class="alert alert-warning border f-s-13 py-2">
+                    <i class="ti ti-microscope me-1"></i>
+                    در حال کنترل کیفیت...
+                </div>
+                <button class="btn btn-outline-info text-start"
+                        onclick="doChangeStatus('ready', 'تأیید کیفیت — آماده تحویل')">
+                    <i class="ti ti-package me-2"></i>تأیید کیفیت — آماده تحویل
+                </button>
+                <button class="btn btn-outline-danger text-start"
+                        onclick="doChangeStatus('in_production', 'برگشت به تولید (رد کیفیت)')">
+                    <i class="ti ti-refresh me-2"></i>رد کیفیت — برگشت به تولید
+                </button>
+
+                {% elif order.status == 'ready' %}
+                <div class="alert alert-info border f-s-13 py-2">
+                    <i class="ti ti-package me-1"></i>
+                    آماده تحویل به مشتری
+                </div>
+                <button class="btn btn-success text-start"
+                        onclick="doChangeStatus('delivered', 'تحویل داده شد')">
+                    <i class="ti ti-truck me-2"></i>تحویل داده شد ✓
+                </button>
+
+                {% elif order.status == 'delivered' %}
+                <div class="alert alert-success border f-s-13 py-2 mb-0">
+                    <i class="ti ti-circle-check me-1"></i>
+                    سفارش تحویل داده شده ✓
+                </div>
+
+                {% elif order.status == 'cancelled' %}
+                <div class="alert alert-danger border f-s-13 py-2 mb-0">
+                    <i class="ti ti-ban me-1"></i>
+                    سفارش لغو شده
+                </div>
+                {% endif %}
+
+                {# لغو سفارش (همیشه نمایش — جز تحویل و لغوشده) #}
+                {% if order.status not in 'delivered,cancelled' %}
+                <hr class="my-1">
+                <button class="btn btn-outline-danger btn-sm text-start"
+                        onclick="doCancelOrder()">
+                    <i class="ti ti-x me-2"></i>لغو سفارش
+                </button>
+                {% endif %}
+
+            </div>
+        </div>
+
+        {# لینک‌های سریع #}
+        <div class="card">
+            <div class="card-body d-grid gap-2">
+                <a href="{% url 'orders:order_edit' order.pk %}" class="btn btn-primary">
+                    <i class="ti ti-edit me-1"></i> ویرایش سفارش
+                </a>
+                <a href="{% url 'orders:order_create' %}?customer={{ order.customer.pk }}"
+                   class="btn btn-outline-success">
+                    <i class="ti ti-plus me-1"></i> سفارش مشابه
+                </a>
+                <a href="{% url 'orders:customer_detail' order.customer.pk %}"
+                   class="btn btn-outline-secondary">
+                    <i class="ti ti-user me-1"></i> پروفایل مشتری
+                </a>
+                <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary">
+                    <i class="ti ti-arrow-right me-1"></i> بازگشت به لیست
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+.workflow-steps span { font-size: 11px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{# فرم مخفی — submit ساده بدون AJAX #}
+<form id="statusForm" method="post" action="{% url 'orders:order_status' order.pk %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="status" id="statusInput">
+</form>
+<form id="cancelForm" method="post" action="{% url 'orders:order_cancel' order.pk %}" style="display:none;">
+    {% csrf_token %}
+</form>
+
+<script>
+function doChangeStatus(newStatus, label) {
+    if (confirm('وضعیت سفارش به «' + label + '» تغییر کند؟')) {
+        document.getElementById('statusInput').value = newStatus;
+        document.getElementById('statusForm').submit();
+    }
+}
+
+function doCancelOrder() {
+    if (confirm('سفارش لغو شود؟ این عمل قابل بازگشت نیست.')) {
+        document.getElementById('cancelForm').submit();
+    }
+}
+</script>
+{% endblock %}

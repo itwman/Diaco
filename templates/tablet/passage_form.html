@@ -1,0 +1,230 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت پاساژ{% endblock %}
+{% block header_icon %}arrows-join-2{% endblock %}
+{% block header_title %}ثبت تولید پاساژ{% endblock %}
+
+{% block content %}
+<style>
+    .quick-hint {
+        background: #f0f9ff;
+        border-right: 4px solid #38bdf8;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        color: #0369a1;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: #0ea5e9; }
+
+    /* دکمه‌های انتخاب سریع */
+    .toggle-group {
+        display: flex;
+        gap: 10px;
+    }
+    .toggle-btn {
+        flex: 1;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        font-weight: 700;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        cursor: pointer;
+        background: #f8fafc;
+        color: #64748b;
+        transition: all 0.2s;
+        user-select: none;
+        text-align: center;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .toggle-btn span.sub { font-size: 0.72rem; font-weight: 400; color: #94a3b8; }
+    .toggle-btn.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .toggle-btn.active .sub { color: rgba(255,255,255,0.75); }
+
+    /* وزن */
+    .weight-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .weight-box {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+    }
+    .weight-box label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .weight-box input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+        color: #1e293b;
+        outline: none;
+    }
+    .weight-box.primary { border-color: #667eea; background: #f5f3ff; }
+
+    .d-none { display: none; }
+</style>
+
+<form method="post" class="tablet-form" id="passageForm">
+    {% csrf_token %}
+
+    <div class="quick-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>پاساژ = ادغام و کشش فتیله‌های کاردینگ. فقط وزن و ماشین را وارد کنید.</span>
+    </div>
+
+    <!-- ماشین و مرحله -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین و مرحله پاساژ</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین پاساژ <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">مرحله پاساژ</label>
+                <div class="toggle-group">
+                    <label class="toggle-btn active" id="btnP1">
+                        <input type="radio" name="passage_number" value="1" checked class="d-none">
+                        پاساژ اول
+                        <span class="sub">ورودی: کاردینگ</span>
+                    </label>
+                    <label class="toggle-btn" id="btnP2">
+                        <input type="radio" name="passage_number" value="2" class="d-none">
+                        پاساژ دوم
+                        <span class="sub">ورودی: پاساژ ۱</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بچ ورودی از کاردینگ -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-link"></i> بچ ورودی</div>
+        <div>
+            <label class="form-label">بچ کاردینگ ورودی <span class="text-danger">*</span></label>
+            <select name="blowroom_batch" class="form-select">
+                <option value="">انتخاب کنید...</option>
+                {% for b in carding_batches %}
+                <option value="{{ b.id }}">
+                    {{ b.batch_number }}{% if b.output_weight %} — {{ b.output_weight }} kg{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">
+                <i class="ti ti-info-circle"></i>
+                اگر پاساژ دوم است، بچ پاساژ اول را انتخاب کنید
+            </div>
+        </div>
+
+        <!-- تعداد فتیله ورودی -->
+        <div style="margin-top:16px;">
+            <label class="form-label">تعداد فتیله ورودی</label>
+            <div class="toggle-group">
+                {% for n in "678" %}
+                <label class="toggle-btn {% if n == '6' %}active{% endif %}" id="btnN{{ n }}">
+                    <input type="radio" name="num_inputs" value="{{ n }}"
+                           {% if n == '6' %}checked{% endif %} class="d-none">
+                    {{ n }} فتیله
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- وزن -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scale"></i> وزن (کیلوگرم)</div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>ورودی کل <span class="text-danger">*</span></label>
+                <input type="number" name="input_total_weight"
+                       placeholder="۰.۰" step="0.1" min="0">
+            </div>
+            <div class="weight-box">
+                <label>خروجی</label>
+                <input type="number" name="output_weight"
+                       placeholder="۰.۰" step="0.1" min="0">
+            </div>
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="مشکلات، تنظیمات غیرمعمول..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-success flex-fill" id="submitBtn">
+            <i class="ti ti-check"></i> ثبت تولید پاساژ
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Toggle پاساژ
+document.getElementById('btnP1').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('btnP2').classList.remove('active');
+});
+document.getElementById('btnP2').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('btnP1').classList.remove('active');
+});
+
+// Toggle تعداد فتیله
+['6','7','8'].forEach(n => {
+    const btn = document.getElementById('btnN' + n);
+    if (btn) btn.addEventListener('click', function(){
+        ['6','7','8'].forEach(x => {
+            const b = document.getElementById('btnN' + x);
+            if (b) b.classList.remove('active');
+        });
+        this.classList.add('active');
+    });
+});
+
+// جلوگیری از ثبت دوباره
+document.getElementById('passageForm').addEventListener('submit', function(){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

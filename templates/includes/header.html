@@ -1,0 +1,70 @@
+{% load static %}
+<!-- Header Section starts -->
+<header class="header-main">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-8 col-sm-6 d-flex align-items-center header-left p-0">
+                <span class="header-toggle">
+                    <i class="ph ph-squares-four"></i>
+                </span>
+                <div class="header-searchbar w-100">
+                    <form action="#" class="mx-sm-3 app-form app-icon-form">
+                        <div class="position-relative">
+                            <input aria-label="جستجو" class="form-control" placeholder="جستجو..." type="search">
+                            <i class="ti ti-search text-dark"></i>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-4 col-sm-6 d-flex align-items-center justify-content-end header-right p-0">
+                <ul class="d-flex align-items-center">
+
+                    <!-- اعلان‌ها -->
+                    <li class="header-notification">
+                        <div class="dropdown">
+                            <a class="d-block head-icon" data-bs-toggle="dropdown" href="#">
+                                <i class="ti ti-bell f-s-22"></i>
+                                <span class="badge bg-danger rounded-pill notification-badge" id="notif-count">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end header-card border-0" style="min-width:300px;">
+                                <div class="p-3 border-bottom">
+                                    <h6 class="mb-0">اعلان‌ها</h6>
+                                </div>
+                                <div class="p-3 text-center text-muted">
+                                    <small>اعلان جدیدی وجود ندارد</small>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- پروفایل -->
+                    <li class="header-profile">
+                        <div class="dropdown">
+                            <a class="d-flex align-items-center" data-bs-toggle="dropdown" href="#">
+                                <span class="h-35 w-35 d-flex-center b-r-10 bg-primary">
+                                    <span class="text-white f-s-14">{{ user.first_name|first|default:"U" }}</span>
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end header-card border-0">
+                                <li class="dropdown-item">
+                                    <span class="f-w-600">{{ user.get_full_name|default:user.username }}</span>
+                                    <br>
+                                    <small class="text-muted">{{ user.get_role_display }}</small>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-item">
+                                    <a class="text-danger" href="{% url 'accounts:logout' %}">
+                                        <i class="ti ti-logout f-s-18 me-1"></i> خروج
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- Header Section ends -->

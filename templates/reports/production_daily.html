@@ -1,0 +1,84 @@
+{% extends "reports/report_base.html" %}
+
+{% block export_buttons %}
+<div class="col-auto">
+    <a href="{% url 'reports:export_production' %}?from={{ date_from|date:'Y-m-d' }}&to={{ date_to|date:'Y-m-d' }}" class="btn btn-success">
+        <i class="ti ti-file-spreadsheet me-1"></i>Excel رینگ
+    </a>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- KPI Cards -->
+<div class="row">
+    {% for s in sections %}
+    <div class="col-xxl-2 col-md-4 col-6">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">{{ s.label }}</h6>
+                <h3 class="mb-0 f-w-700">{{ s.completed }}<small class="text-muted f-s-13"> / {{ s.total }}</small></h3>
+                <small class="text-muted">{{ s.total_weight|floatformat:0 }} خروجی</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- جدول خلاصه -->
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">خلاصه تولید بخش‌ها</h5></div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr><th>بخش</th><th>کل بچ</th><th>تکمیل</th><th>وزن خروجی</th><th>درصد تکمیل</th></tr>
+            </thead>
+            <tbody>
+                {% for s in sections %}
+                <tr>
+                    <td class="f-w-600">{{ s.label }}</td>
+                    <td>{{ s.total }}</td>
+                    <td>{{ s.completed }}</td>
+                    <td>{{ s.total_weight|floatformat:1 }}</td>
+                    <td>
+                        {% if s.total > 0 %}
+                        {% widthratio s.completed s.total 100 as pct %}
+                        <div class="progress" style="height:6px;min-width:80px;">
+                            <div class="progress-bar {% if pct >= 80 %}bg-success{% elif pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ pct }}%"></div>
+                        </div>
+                        <small>{{ pct }}%</small>
+                        {% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- نمودار تولید روزانه رینگ -->
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">تولید رینگ (وزن خروجی روزانه)</h5></div>
+    <div class="card-body">
+        <div id="chart-daily-production"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+var chartData = {{ chart_data|safe }};
+if (chartData.length > 0) {
+    new ApexCharts(document.querySelector('#chart-daily-production'), {
+        chart: { type: 'area', height: 320, fontFamily: 'Vazirmatn FD', toolbar: { show: true } },
+        series: [{ name: 'وزن خروجی (kg)', data: chartData.map(d => d.weight) }],
+        xaxis: { categories: chartData.map(d => d.date), labels: { rotate: -45 } },
+        yaxis: { title: { text: 'kg' } },
+        colors: ['#4361ee'],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.1 } },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 2 },
+        tooltip: { y: { formatter: v => v.toFixed(1) + ' kg' } },
+    }).render();
+}
+</script>
+{% endblock %}

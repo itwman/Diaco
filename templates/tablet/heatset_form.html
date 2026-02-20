@@ -1,0 +1,522 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت هیت‌ست{% endblock %}
+{% block header_icon %}flame{% endblock %}
+{% block header_title %}ثبت بچ هیت‌ست{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --hs-main: #dc2626;
+        --hs-light: #fee2e2;
+        --hs-orange: #ea580c;
+        --hs-grad: linear-gradient(135deg, #ef4444, #dc2626);
+        --hs-shadow: rgba(220, 38, 38, 0.3);
+    }
+
+    .hs-header-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--hs-grad); color: white;
+        padding: 10px 20px; border-radius: 16px;
+        font-size: 0.9rem; font-weight: 700;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px var(--hs-shadow);
+    }
+
+    .tablet-card-title i { color: var(--hs-main) !important; }
+
+    .tablet-btn-hs {
+        background: var(--hs-grad); color: white;
+        box-shadow: 0 4px 15px var(--hs-shadow);
+    }
+    .tablet-btn-hs:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white; box-shadow: 0 6px 20px var(--hs-shadow);
+    }
+
+    /* نوع ماشین */
+    .machine-type-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mt-btn {
+        flex: 1; min-width: 80px; min-height: 60px;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 4px;
+        border: 2px solid #e2e8f0; border-radius: 14px;
+        cursor: pointer; background: #f8fafc;
+        font-size: 0.8rem; font-weight: 700; color: #64748b;
+        transition: all 0.2s;
+    }
+    .mt-btn i { font-size: 1.4rem; }
+    .mt-btn.active {
+        background: var(--hs-light); border-color: var(--hs-main);
+        color: var(--hs-main);
+    }
+
+    /* نمایشگر دما */
+    .temp-display {
+        background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+        border: 2px solid #fca5a5;
+        border-radius: 16px; padding: 16px; text-align: center;
+        margin-top: 12px;
+    }
+    .temp-display.ok { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-color: #86efac; }
+    .temp-display.warn { background: linear-gradient(135deg, #fefce8, #fef9c3); border-color: #fde047; }
+    .temp-val { font-size: 2.2rem; font-weight: 800; color: var(--hs-main); line-height: 1; }
+    .temp-display.ok .temp-val { color: #16a34a; }
+    .temp-display.warn .temp-val { color: #ca8a04; }
+    .temp-label { font-size: 0.8rem; color: #64748b; margin-top: 4px; font-weight: 600; }
+
+    /* زمان‌بندی چرخه */
+    .cycle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cycle-box {
+        background: #fff7f0; border: 2px solid #fed7aa;
+        border-radius: 12px; padding: 14px; text-align: center;
+    }
+    .cycle-box label { font-size: 0.75rem; color: #9a3412; font-weight: 700; display: block; margin-bottom: 8px; }
+    .cycle-box input {
+        width: 100%; border: none; background: transparent;
+        font-size: 1.3rem; font-weight: 800; text-align: center; color: #c2410c; outline: none;
+    }
+    .cycle-box input:focus { color: var(--hs-main); }
+    .cycle-box.total { background: #fff1f2; border-color: #fca5a5; grid-column: 1 / -1; }
+    .cycle-box.total .cycle-total-val {
+        font-size: 1.8rem; font-weight: 900; color: var(--hs-main); margin-top: 8px;
+    }
+
+    /* نتیجه کیفی */
+    .quality-group { display: flex; gap: 10px; }
+    .quality-btn {
+        flex: 1; min-height: 70px;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 6px;
+        border: 2px solid #e2e8f0; border-radius: 16px;
+        cursor: pointer; background: #f8fafc;
+        font-size: 0.9rem; font-weight: 700; color: #64748b;
+        transition: all 0.2s;
+    }
+    .quality-btn i { font-size: 1.6rem; }
+    .quality-btn.active-pass { background: #d1fae5; border-color: #10b981; color: #065f46; }
+    .quality-btn.active-fail { background: var(--hs-light); border-color: var(--hs-main); color: #991b1b; }
+    .quality-btn.active-cond { background: #fef3c7; border-color: #d97706; color: #78350f; }
+
+    /* لاگ چرخه HTMX */
+    .log-section {
+        background: #f9fafb;
+        border: 2px dashed #d1d5db;
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 12px;
+    }
+    .log-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+    .log-row .log-input { flex: 1; }
+    .log-btn-add {
+        min-height: 52px; padding: 0 16px;
+        background: var(--hs-grad); color: white;
+        border: none; border-radius: 12px;
+        font-size: 0.9rem; font-weight: 700;
+        cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .log-btn-add:hover { opacity: 0.9; }
+    .log-list { max-height: 160px; overflow-y: auto; }
+    .log-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 12px; background: white;
+        border-radius: 10px; margin-bottom: 6px;
+        border: 1px solid #e5e7eb; font-size: 0.85rem;
+    }
+    .log-item .log-time { color: #6b7280; }
+    .log-item .log-temp { font-weight: 700; color: var(--hs-main); }
+    .log-item .log-phase {
+        background: var(--hs-light); color: var(--hs-main);
+        padding: 2px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 700;
+    }
+
+    /* وزن */
+    .weight-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .weight-box {
+        background: #f8fafc; border: 2px solid #e2e8f0;
+        border-radius: 14px; padding: 14px; text-align: center;
+    }
+    .weight-box label { font-size: 0.8rem; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 8px; }
+    .weight-box input {
+        width: 100%; border: none; background: transparent;
+        font-size: 1.3rem; font-weight: 700; text-align: center; color: #1e293b; outline: none;
+    }
+    .weight-box input:focus { color: var(--hs-main); }
+    .weight-box.primary { border-color: var(--hs-main); background: var(--hs-light); }
+
+    .quick-hint {
+        background: #fff1f2; border-right: 4px solid #f87171;
+        border-radius: 10px; padding: 12px 16px;
+        font-size: 0.85rem; color: #991b1b;
+        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: var(--hs-main); }
+
+    .d-none { display: none; }
+</style>
+
+<form method="post" id="heatsetForm">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="create" id="actionInput">
+
+    <div class="hs-header-badge">
+        <i class="ti ti-flame"></i> هیت‌ست / تثبیت حرارتی (HS)
+    </div>
+
+    <div class="quick-hint">
+        <i class="ti ti-temperature"></i>
+        <span>تاب نخ با بخار و حرارت تثبیت می‌شود. پارامترهای صحیح از چروک شدن فرش جلوگیری می‌کند.</span>
+    </div>
+
+    <!-- ماشین + ورودی TFO -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین و ورودی</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین هیت‌ست <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">بچ TFO ورودی</label>
+                <select name="tfo_production" class="form-select">
+                    <option value="">انتخاب (اختیاری)...</option>
+                    {% for t in tfo_batches %}
+                    <option value="{{ t.id }}">
+                        {{ t.batch_number }}{% if t.output_weight_kg %} — {{ t.output_weight_kg }} kg{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- نوع دستگاه -->
+        <div style="margin-top:16px;">
+            <label class="form-label" style="margin-bottom:10px;">نوع دستگاه هیت‌ست</label>
+            <div class="machine-type-group">
+                <label class="mt-btn active" id="mtAutoclave">
+                    <input type="radio" name="machine_type_hs" value="autoclave" checked class="d-none">
+                    <i class="ti ti-cylinder"></i> اتوکلاو
+                </label>
+                <label class="mt-btn" id="mtSuperba">
+                    <input type="radio" name="machine_type_hs" value="superba" class="d-none">
+                    <i class="ti ti-wave-square"></i> سوپربا
+                </label>
+                <label class="mt-btn" id="mtSuessen">
+                    <input type="radio" name="machine_type_hs" value="suessen" class="d-none">
+                    <i class="ti ti-wind"></i> سوسن
+                </label>
+            </div>
+        </div>
+
+        <!-- نوع الیاف -->
+        <div style="margin-top:16px;">
+            <label class="form-label">نوع الیاف</label>
+            <select name="fiber_type" class="form-select" id="fiberTypeSelect" onchange="updateTempHint()">
+                <option value="polyester">پلی‌استر</option>
+                <option value="acrylic">اکریلیک</option>
+                <option value="wool">پشم</option>
+                <option value="nylon">نایلون (PA)</option>
+                <option value="blend">مخلوط</option>
+            </select>
+            <div id="tempHint" style="margin-top:8px; padding:8px 12px; background:#fff7f0;
+                 border-radius:8px; font-size:0.8rem; color:#9a3412; font-weight:600;">
+                <i class="ti ti-info-circle"></i>
+                <span id="tempHintText">پلی‌استر: ۱۳۰–۱۸۰°C</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- دما -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-temperature"></i> پارامترهای حرارتی</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">دمای تثبیت (°C) <span class="text-danger">*</span></label>
+                <input type="number" name="temperature_c" id="tempInput" class="form-control"
+                       placeholder="۱۲۰" min="80" max="220" step="5"
+                       oninput="updateTempDisplay()" required>
+                <div class="temp-display" id="tempDisplay">
+                    <div class="temp-val" id="tempVal">—</div>
+                    <div class="temp-label" id="tempLabel">دمای مناسب را وارد کنید</div>
+                </div>
+            </div>
+            <div>
+                <label class="form-label">فشار بخار (bar)</label>
+                <input type="number" name="steam_pressure_bar" class="form-control"
+                       placeholder="۱.۵" min="0" max="5" step="0.1">
+                <label class="form-label" style="margin-top:12px;">سطح خلأ (mbar)</label>
+                <input type="number" name="vacuum_level_mbar" class="form-control"
+                       placeholder="۱۰۰" min="0" max="500" step="10">
+            </div>
+        </div>
+    </div>
+
+    <!-- زمان‌بندی چرخه -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-clock"></i> زمان‌بندی چرخه (دقیقه)</div>
+        <div class="cycle-grid">
+            <div class="cycle-box">
+                <label><i class="ti ti-flame"></i> پیش‌گرم</label>
+                <input type="number" name="pre_heat_min" id="c1" placeholder="۱۰"
+                       min="0" oninput="calcTotal()">
+            </div>
+            <div class="cycle-box">
+                <label><i class="ti ti-wind"></i> خلأ</label>
+                <input type="number" name="vacuum_time_min" id="c2" placeholder="۵"
+                       min="0" oninput="calcTotal()">
+            </div>
+            <div class="cycle-box">
+                <label><i class="ti ti-droplet"></i> بخار</label>
+                <input type="number" name="steam_time_min" id="c3" placeholder="۱۵"
+                       min="0" oninput="calcTotal()">
+            </div>
+            <div class="cycle-box">
+                <label><i class="ti ti-clock-pause"></i> نگه‌داری</label>
+                <input type="number" name="dwell_time_min" id="c4" placeholder="۱۰"
+                       min="0" oninput="calcTotal()">
+            </div>
+            <div class="cycle-box">
+                <label><i class="ti ti-snowflake"></i> سردشدن</label>
+                <input type="number" name="cooldown_min" id="c5" placeholder="۱۰"
+                       min="0" oninput="calcTotal()">
+            </div>
+            <div class="cycle-box total">
+                <label><i class="ti ti-sum"></i> مدت کل چرخه</label>
+                <div class="cycle-total-val" id="cycleTotalVal">— دقیقه</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بار و وزن -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scale"></i> بارگذاری</div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>وزن بچ (kg) <span class="text-danger">*</span></label>
+                <input type="number" name="batch_weight_kg" placeholder="۰.۰" step="0.1" min="0" required>
+            </div>
+            <div class="weight-box">
+                <label>تعداد بوبین</label>
+                <input type="number" name="packages_count" placeholder="۰" min="0">
+            </div>
+        </div>
+    </div>
+
+    <!-- نتیجه کیفی -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-checkbox"></i> نتیجه کیفی</div>
+        <div class="quality-group">
+            <label class="quality-btn" id="btnPass">
+                <input type="radio" name="quality_result" value="pass" class="d-none">
+                <i class="ti ti-circle-check" style="color:#10b981;"></i>
+                قبول
+            </label>
+            <label class="quality-btn" id="btnFail">
+                <input type="radio" name="quality_result" value="fail" class="d-none">
+                <i class="ti ti-circle-x" style="color:#ef4444;"></i>
+                رد
+            </label>
+            <label class="quality-btn" id="btnCond">
+                <input type="radio" name="quality_result" value="conditional" class="d-none">
+                <i class="ti ti-alert-circle" style="color:#d97706;"></i>
+                مشروط
+            </label>
+        </div>
+    </div>
+
+    <!-- ثبت لاگ چرخه (اختیاری - برای اتوکلاو) -->
+    <div class="tablet-card" id="logSection">
+        <div class="tablet-card-title"><i class="ti ti-chart-line"></i> ثبت لحظه‌ای چرخه (اختیاری)</div>
+        <p style="font-size:0.85rem; color:#64748b; margin-bottom:14px;">
+            دما و فشار را در مراحل مختلف ثبت کنید تا منحنی چرخه رسم شود.
+        </p>
+        <div class="log-section">
+            <div class="log-row">
+                <div class="log-input">
+                    <label class="form-label" style="font-size:0.8rem;">دقیقه از شروع</label>
+                    <input type="number" id="logElapsed" class="form-control" placeholder="۰" min="0" step="1">
+                </div>
+                <div class="log-input">
+                    <label class="form-label" style="font-size:0.8rem;">دما (°C)</label>
+                    <input type="number" id="logTemp" class="form-control" placeholder="۱۲۰" min="0" step="1">
+                </div>
+                <div class="log-input">
+                    <label class="form-label" style="font-size:0.8rem;">فشار (bar)</label>
+                    <input type="number" id="logPressure" class="form-control" placeholder="۱.۵" step="0.1" min="0">
+                </div>
+            </div>
+            <div class="log-row" style="margin-bottom:8px;">
+                <div class="log-input">
+                    <label class="form-label" style="font-size:0.8rem;">مرحله</label>
+                    <select id="logPhase" class="form-select">
+                        <option value="preheat">پیش‌گرم</option>
+                        <option value="vacuum">خلأ</option>
+                        <option value="steam" selected>بخار</option>
+                        <option value="dwell">نگه‌داری</option>
+                        <option value="cooldown">سردشدن</option>
+                    </select>
+                </div>
+                <button type="button" class="log-btn-add" onclick="addLog()">
+                    <i class="ti ti-plus"></i> ثبت لاگ
+                </button>
+            </div>
+            <div class="log-list" id="logList">
+                <div style="text-align:center; color:#9ca3af; font-size:0.85rem; padding:16px;">
+                    هنوز لاگی ثبت نشده
+                </div>
+            </div>
+        </div>
+        <!-- لاگ‌ها به صورت JSON برای ارسال با فرم -->
+        <input type="hidden" name="cycle_logs_json" id="cycleLogsJson" value="[]">
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="نتایج غیرعادی، تنظیمات خاص، یا نکات مهم..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-hs flex-fill" id="submitBtn">
+            <i class="ti ti-flame"></i> ثبت بچ هیت‌ست
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const TEMP_HINTS = {
+    polyester:    'پلی‌استر: ۱۳۰–۱۸۰°C',
+    acrylic:      'اکریلیک: ۱۱۰–۱۳۵°C',
+    wool:         'پشم: ۱۰۰–۱۲۰°C (با احتیاط)',
+    nylon:        'نایلون PA: ۱۰۵–۱۲۵°C (حساس)',
+    polypropylene:'پلی‌پروپیلن: ۱۰۰–۱۲۰°C',
+    blend:        'مخلوط: بر اساس الیاف غالب',
+};
+const TEMP_RANGES = {
+    polyester: [130, 180], acrylic: [110, 135],
+    wool: [100, 120], nylon: [105, 125],
+    polypropylene: [100, 120], blend: [105, 160],
+};
+
+function updateTempHint() {
+    const ft = document.getElementById('fiberTypeSelect').value;
+    document.getElementById('tempHintText').textContent = TEMP_HINTS[ft] || '';
+    updateTempDisplay();
+}
+
+function updateTempDisplay() {
+    const temp = parseFloat(document.getElementById('tempInput').value);
+    const ft = document.getElementById('fiberTypeSelect').value;
+    const range = TEMP_RANGES[ft] || [100, 180];
+    const disp = document.getElementById('tempDisplay');
+    const val = document.getElementById('tempVal');
+    const lbl = document.getElementById('tempLabel');
+
+    if (!temp) { val.textContent = '—'; lbl.textContent = 'دمای مناسب را وارد کنید'; disp.className = 'temp-display'; return; }
+
+    val.textContent = temp.toLocaleString('fa-IR') + '°C';
+    if (temp < range[0] - 10 || temp > range[1] + 10) {
+        disp.className = 'temp-display';
+        lbl.textContent = `⚠ خارج از محدوده — ${TEMP_HINTS[ft]}`;
+    } else if (temp >= range[0] && temp <= range[1]) {
+        disp.className = 'temp-display ok';
+        lbl.textContent = '✓ در محدوده استاندارد';
+    } else {
+        disp.className = 'temp-display warn';
+        lbl.textContent = `نزدیک به حد — ${TEMP_HINTS[ft]}`;
+    }
+}
+
+// ── زمان کل چرخه
+function calcTotal() {
+    let total = 0;
+    ['c1','c2','c3','c4','c5'].forEach(id => {
+        const v = parseFloat(document.getElementById(id).value);
+        if (!isNaN(v) && v > 0) total += v;
+    });
+    const el = document.getElementById('cycleTotalVal');
+    el.textContent = total > 0 ? total.toLocaleString('fa-IR') + ' دقیقه' : '— دقیقه';
+}
+
+// ── نوع ماشین
+['mtAutoclave','mtSuperba','mtSuessen'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(){
+        ['mtAutoclave','mtSuperba','mtSuessen'].forEach(x =>
+            document.getElementById(x).className = 'mt-btn');
+        this.className = 'mt-btn active';
+    });
+});
+
+// ── نتیجه کیفی
+document.getElementById('btnPass').addEventListener('click', function(){
+    ['btnPass','btnFail','btnCond'].forEach(x => document.getElementById(x).className = 'quality-btn');
+    this.className = 'quality-btn active-pass';
+});
+document.getElementById('btnFail').addEventListener('click', function(){
+    ['btnPass','btnFail','btnCond'].forEach(x => document.getElementById(x).className = 'quality-btn');
+    this.className = 'quality-btn active-fail';
+});
+document.getElementById('btnCond').addEventListener('click', function(){
+    ['btnPass','btnFail','btnCond'].forEach(x => document.getElementById(x).className = 'quality-btn');
+    this.className = 'quality-btn active-cond';
+});
+
+// ── لاگ‌های چرخه (ذخیره در JSON برای ارسال با فرم)
+let cycleLogs = [];
+const phaseLabels = {
+    preheat: 'پیش‌گرم', vacuum: 'خلأ', steam: 'بخار',
+    dwell: 'نگه‌داری', cooldown: 'سردشدن'
+};
+
+function addLog() {
+    const elapsed = document.getElementById('logElapsed').value;
+    const temp = document.getElementById('logTemp').value;
+    const pressure = document.getElementById('logPressure').value;
+    const phase = document.getElementById('logPhase').value;
+
+    if (!temp) { alert('دما را وارد کنید'); return; }
+
+    const entry = { elapsed_min: elapsed || null, temperature_c: temp, pressure_bar: pressure || null, phase };
+    cycleLogs.push(entry);
+    document.getElementById('cycleLogsJson').value = JSON.stringify(cycleLogs);
+
+    // نمایش در لیست
+    const list = document.getElementById('logList');
+    if (cycleLogs.length === 1) list.innerHTML = '';
+
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `
+        <span class="log-phase">${phaseLabels[phase]}</span>
+        ${elapsed ? `<span class="log-time">${parseFloat(elapsed).toLocaleString('fa-IR')} دقیقه</span>` : ''}
+        <span class="log-temp">${parseFloat(temp).toLocaleString('fa-IR')}°C</span>
+        ${pressure ? `<span style="color:#6b7280; font-size:0.8rem;">${parseFloat(pressure).toLocaleString('fa-IR')} bar</span>` : ''}
+    `;
+    list.appendChild(item);
+
+    // پاک کردن فیلدها
+    document.getElementById('logTemp').value = '';
+    document.getElementById('logPressure').value = '';
+    const elapsed_num = parseFloat(elapsed);
+    if (!isNaN(elapsed_num)) document.getElementById('logElapsed').value = elapsed_num + 5;
+}
+
+// ── جلوگیری از ثبت دوباره
+document.getElementById('heatsetForm').addEventListener('submit', function(){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

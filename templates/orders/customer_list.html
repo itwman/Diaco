@@ -1,0 +1,305 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block header_actions %}
+<button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+    <i class="ti ti-plus me-1"></i> مشتری جدید
+</button>
+{% endblock %}
+
+{# فیلتر و جستجو #}
+{% block extra_before_table %}
+<div class="card-header border-top py-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-5">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="ti ti-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="نام، شرکت، تلفن، شهر..."
+                       value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">همه وضعیت‌ها</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>فعال</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>غیرفعال</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary btn-sm">اعمال</button>
+            {% if search_query or status_filter %}
+            <a href="{% url 'orders:customer_list' %}" class="btn btn-outline-secondary btn-sm">پاک کردن</a>
+            {% endif %}
+        </div>
+        <div class="col-auto ms-auto">
+            <span class="text-muted f-s-13">
+                <i class="ti ti-users"></i>
+                {{ total_active }} فعال از {{ total_all }} مشتری
+            </span>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+<th>#</th>
+<th>نام / شرکت</th>
+<th>تلفن</th>
+<th>شهر</th>
+<th>سقف اعتبار</th>
+<th>سفارشات</th>
+<th>وضعیت</th>
+<th>عملیات</th>
+{% endblock %}
+
+{% block table_body %}
+{% for c in object_list %}
+<tr class="{% if not c.is_active %}table-light text-muted{% endif %}">
+    <td class="text-muted">{{ forloop.counter }}</td>
+    <td>
+        <a href="{% url 'orders:customer_detail' c.pk %}" class="f-w-600 text-decoration-none">
+            {{ c.name }}
+        </a>
+        {% if c.company %}
+        <div class="text-muted f-s-12">{{ c.company }}</div>
+        {% endif %}
+    </td>
+    <td dir="ltr" class="text-end">
+        {{ c.phone|default:c.mobile|default:"—" }}
+    </td>
+    <td>{{ c.city|default:"—" }}</td>
+    <td>
+        {% if c.credit_limit %}
+        <span class="f-s-13">{{ c.credit_limit|floatformat:0 }}</span>
+        <span class="text-muted f-s-11">ریال</span>
+        {% else %}—{% endif %}
+    </td>
+    <td>
+        <span class="badge bg-light-primary text-primary">
+            {{ c.orders.count }} سفارش
+        </span>
+    </td>
+    <td>
+        {% if c.is_active %}
+        <span class="badge bg-light-success text-success"><i class="ti ti-circle-filled f-s-9"></i> فعال</span>
+        {% else %}
+        <span class="badge bg-light-danger text-danger"><i class="ti ti-circle f-s-9"></i> غیرفعال</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'orders:customer_detail' c.pk %}" class="btn btn-outline-primary" title="جزئیات">
+                <i class="ti ti-eye"></i>
+            </a>
+            <button class="btn btn-outline-secondary" title="ویرایش سریع"
+                    onclick="openEditModal({{ c.pk }})">
+                <i class="ti ti-edit"></i>
+            </button>
+            <a href="{% url 'orders:order_create' %}?customer={{ c.pk }}" class="btn btn-outline-success" title="سفارش جدید">
+                <i class="ti ti-plus"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% endfor %}
+{% endblock %}
+
+
+{# ── Modal افزودن/ویرایش مشتری ─────────────────────────── #}
+{% block extra_content %}
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="ti ti-user-plus me-2"></i>مشتری جدید
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="customerForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        {# ردیف ۱: نام و شرکت #}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">نام مشتری <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="f_name" class="form-control" required
+                                   placeholder="نام کامل مشتری">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">شرکت</label>
+                            <input type="text" name="company" id="f_company" class="form-control"
+                                   placeholder="نام شرکت (اختیاری)">
+                        </div>
+
+                        {# ردیف ۲: تلفن‌ها #}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">تلفن</label>
+                            <input type="text" name="phone" id="f_phone" class="form-control" dir="ltr"
+                                   placeholder="021-XXXXXXXX">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">موبایل</label>
+                            <input type="text" name="mobile" id="f_mobile" class="form-control" dir="ltr"
+                                   placeholder="09XXXXXXXXX">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">ایمیل</label>
+                            <input type="email" name="email" id="f_email" class="form-control" dir="ltr"
+                                   placeholder="email@example.com">
+                        </div>
+
+                        {# ردیف ۳: شهر و استان #}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شهر</label>
+                            <input type="text" name="city" id="f_city" class="form-control"
+                                   placeholder="مثال: کاشان">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">استان</label>
+                            <input type="text" name="province" id="f_province" class="form-control"
+                                   placeholder="مثال: اصفهان">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شناسه مالیاتی</label>
+                            <input type="text" name="tax_id" id="f_tax_id" class="form-control" dir="ltr"
+                                   placeholder="۱۰ رقم">
+                        </div>
+
+                        {# ردیف ۴: آدرس #}
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">آدرس</label>
+                            <textarea name="address" id="f_address" class="form-control" rows="2"
+                                      placeholder="آدرس کامل (اختیاری)"></textarea>
+                        </div>
+
+                        {# ردیف ۵: سقف اعتبار و یادداشت #}
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">سقف اعتبار (ریال)</label>
+                            <div class="input-group">
+                                <input type="number" name="credit_limit" id="f_credit" class="form-control"
+                                       placeholder="۰" min="0" step="1000000">
+                                <span class="input-group-text f-s-12">ریال</span>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">یادداشت</label>
+                            <input type="text" name="notes" id="f_notes" class="form-control"
+                                   placeholder="نکات خاص این مشتری">
+                        </div>
+                    </div>
+
+                    {# پیام خطا #}
+                    <div id="formError" class="alert alert-danger mt-3 d-none py-2">
+                        <i class="ti ti-alert-circle me-1"></i>
+                        <span id="formErrorText"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        <i class="ti ti-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+let editingId = null;
+const modal = new bootstrap.Modal(document.getElementById('customerModal'));
+
+// ── باز کردن Modal افزودن ─────────────────────────────────
+function openCreateModal() {
+    editingId = null;
+    document.getElementById('modalTitle').innerHTML =
+        '<i class="ti ti-user-plus me-2"></i>مشتری جدید';
+    document.getElementById('customerForm').reset();
+    document.getElementById('formError').classList.add('d-none');
+    modal.show();
+}
+
+// ── باز کردن Modal ویرایش ────────────────────────────────
+async function openEditModal(id) {
+    try {
+        const resp = await fetch(`/orders/customers/${id}/json/`);
+        const data = await resp.json();
+        editingId = id;
+        document.getElementById('modalTitle').innerHTML =
+            '<i class="ti ti-edit me-2"></i>ویرایش مشتری';
+        // پر کردن فیلدها
+        document.getElementById('f_name').value = data.name || '';
+        document.getElementById('f_company').value = data.company || '';
+        document.getElementById('f_phone').value = data.phone || '';
+        document.getElementById('f_mobile').value = data.mobile || '';
+        document.getElementById('f_email').value = data.email || '';
+        document.getElementById('f_city').value = data.city || '';
+        document.getElementById('f_province').value = data.province || '';
+        document.getElementById('f_address').value = data.address || '';
+        document.getElementById('f_tax_id').value = data.tax_id || '';
+        document.getElementById('f_credit').value = data.credit_limit || '';
+        document.getElementById('f_notes').value = data.notes || '';
+        document.getElementById('formError').classList.add('d-none');
+        modal.show();
+    } catch(e) {
+        alert('خطا در بارگذاری اطلاعات');
+    }
+}
+
+// ── ارسال فرم ────────────────────────────────────────────
+document.getElementById('customerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>در حال ذخیره...';
+
+    const formData = new FormData(this);
+    const url = editingId
+        ? `/orders/customers/${editingId}/`
+        : '/orders/customers/create/';
+
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            modal.hide();
+            // نمایش پیام موفقیت و رفرش صفحه
+            showToast(data.message || 'ذخیره شد', 'success');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            document.getElementById('formError').classList.remove('d-none');
+            document.getElementById('formErrorText').textContent = data.error || 'خطای ناشناخته';
+        }
+    } catch(err) {
+        document.getElementById('formError').classList.remove('d-none');
+        document.getElementById('formErrorText').textContent = 'خطای شبکه';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-check me-1"></i>ذخیره';
+    }
+});
+
+// ── Toast کوچک ───────────────────────────────────────────
+function showToast(msg, type = 'success') {
+    const colors = { success: '#198754', danger: '#dc3545', warning: '#ffc107' };
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
+        background:${colors[type]||colors.success};color:#fff;padding:12px 28px;
+        border-radius:8px;z-index:9999;font-weight:600;box-shadow:0 4px 15px rgba(0,0,0,.2);
+        animation:fadeIn .3s;font-family:inherit;`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+}
+</script>
+{% endblock %}

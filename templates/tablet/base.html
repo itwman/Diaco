@@ -1,0 +1,445 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>{% block title %}ثبت تولید{% endblock %} | دیاکو</title>
+    <link href="{% static 'fonts/vazir/Farsi-Digits/Vazirmatn-FD-font-face.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/tabler-icons/tabler-icons.css' %}" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Vazirmatn FD', sans-serif;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        /* هدر */
+        .tablet-header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .tablet-header h4 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tablet-header h4 i {
+            color: #667eea;
+            font-size: 1.5rem;
+        }
+        
+        .operator-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .shift-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .line-badge {
+            background: #fbbf24;
+            color: #78350f;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .line-badge:hover {
+            background: #f59e0b;
+            color: #78350f;
+            transform: translateY(-2px);
+        }
+        
+        .home-icon {
+            color: #667eea;
+            font-size: 1.5rem;
+            transition: all 0.2s;
+        }
+        
+        .home-icon:hover {
+            color: #764ba2;
+            transform: scale(1.1);
+        }
+        
+        /* محتوا */
+        .tablet-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px 100px;
+        }
+        
+        /* کارت */
+        .tablet-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tablet-card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tablet-card-title i {
+            color: #667eea;
+            font-size: 1.3rem;
+        }
+        
+        /* گرید */
+        .tablet-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .tablet-grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        /* فرم */
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+        
+        .form-control,
+        .form-select {
+            width: 100%;
+            min-height: 52px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: #f8fafc;
+            transition: all 0.2s;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type="number"] {
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        /* دکمه‌ها */
+        .tablet-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 56px;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        .tablet-btn:active {
+            transform: scale(0.97);
+        }
+        
+        .tablet-btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .tablet-btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            color: white;
+        }
+        
+        .tablet-btn-outline {
+            background: white;
+            color: #64748b;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .tablet-btn-outline:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        
+        /* الرت */
+        .tablet-alert {
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .tablet-alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        
+        .tablet-alert-error,
+        .tablet-alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        .tablet-alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* ناوبری پایین */
+        .tablet-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tablet-bottom-nav a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            min-width: 70px;
+        }
+        
+        .tablet-bottom-nav a i {
+            font-size: 1.5rem;
+        }
+        
+        .tablet-bottom-nav a.active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .tablet-bottom-nav a:hover {
+            color: #667eea;
+        }
+        
+        /* کلاس‌های کمکی */
+        .d-flex {
+            display: flex;
+        }
+        
+        .gap-3 {
+            gap: 1rem;
+        }
+        
+        .flex-fill {
+            flex: 1;
+        }
+        
+        .text-danger {
+            color: #ef4444;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tablet-grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .tablet-grid,
+            .tablet-grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .tablet-container {
+                padding: 16px 12px 100px;
+            }
+            
+            .tablet-card {
+                padding: 20px;
+            }
+            
+            .header-right {
+                flex-direction: column;
+                gap: 6px;
+                align-items: flex-end;
+            }
+        }
+    </style>
+</head>
+<body class="tablet-body rtl">
+
+    <!-- هدر -->
+    <div class="tablet-header">
+        <div>
+            <h4>
+                <i class="ti ti-{% block header_icon %}settings{% endblock %}"></i>
+                {% block header_title %}ثبت تولید{% endblock %}
+            </h4>
+            <div class="operator-info">{{ user.get_full_name }} | {{ user.get_department_display }}</div>
+        </div>
+        <div class="header-right">
+            {% if selected_line %}
+            <a href="{% url 'tablet:select_line' %}" class="line-badge" title="تغییر خط">
+                <i class="ti ti-assembly"></i>{{ selected_line.code }}
+            </a>
+            {% endif %}
+            <span class="shift-badge" id="current-shift">--</span>
+            <a href="{% url 'tablet:home' %}" class="home-icon" title="خانه">
+                <i class="ti ti-home"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- محتوا -->
+    <div class="tablet-container">
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="tablet-alert tablet-alert-{{ msg.tags }}">
+            {% if msg.tags == 'success' %}
+                <i class="ti ti-circle-check"></i>
+            {% else %}
+                <i class="ti ti-alert-circle"></i>
+            {% endif %}
+            {{ msg }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- ناوبری پایین -->
+    <div class="tablet-bottom-nav">
+        <a href="{% url 'tablet:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="ti ti-home"></i> خانه
+        </a>
+        <a href="{% url 'tablet:spinning_form' %}" class="{% if 'spinning' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-rotate-clockwise"></i> رینگ
+        </a>
+        <a href="{% url 'tablet:winding_form' %}" class="{% if 'winding' in request.resolver_match.url_name %}active{% endif %}"
+           style="{% if 'winding' in request.resolver_match.url_name %}color:#0891b2;{% endif %}">
+            <i class="ti ti-rotate-2"></i> WD
+        </a>
+        <a href="{% url 'tablet:tfo_form' %}" class="{% if 'tfo' in request.resolver_match.url_name %}active{% endif %}"
+           style="{% if 'tfo' in request.resolver_match.url_name %}color:#7c3aed;{% endif %}">
+            <i class="ti ti-infinity"></i> TFO
+        </a>
+        <a href="{% url 'tablet:heatset_form' %}" class="{% if 'heatset' in request.resolver_match.url_name %}active{% endif %}"
+           style="{% if 'heatset' in request.resolver_match.url_name %}color:#dc2626;{% endif %}">
+            <i class="ti ti-flame"></i> HS
+        </a>
+        <a href="{% url 'tablet:downtime_form' %}"
+           class="{% if 'downtime' in request.resolver_match.url_name %}active{% endif %}"
+           style="color:#d97706;">
+            <i class="ti ti-alert-triangle"></i> توقف
+        </a>
+    </div>
+
+    <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script>
+    // تشخیص شیفت جاری
+    (function(){
+        const h = new Date().getHours();
+        let shift = 'شیفت شب';
+        if (h >= 6 && h < 14) shift = 'شیفت صبح';
+        else if (h >= 14 && h < 22) shift = 'شیفت عصر';
+        document.getElementById('current-shift').textContent = shift;
+    })();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

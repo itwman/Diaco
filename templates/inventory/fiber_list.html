@@ -1,0 +1,568 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{# ── دکمه‌های سربرگ ─────────────────────────────────────── #}
+{% block header_actions %}
+<button class="btn btn-success btn-sm" onclick="openReceiveModal()">
+    <i class="ti ti-package-import me-1"></i> ورود الیاف
+</button>
+{% endblock %}
+
+{# ── کارت‌های آمار + فیلتر ──────────────────────────────── #}
+{% block extra_before_table %}
+
+{# آمار #}
+<div class="card-header border-top py-3">
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-success">
+                    <i class="ti ti-weight f-s-18 text-success"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.total_weight|floatformat:0 }} kg</div>
+                    <div class="text-muted f-s-12">کل موجودی</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-primary">
+                    <i class="ti ti-packages f-s-18 text-primary"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.count_available }}</div>
+                    <div class="text-muted f-s-12">بچ موجود</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-warning">
+                    <i class="ti ti-alert-triangle f-s-18 text-warning"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.count_low }}</div>
+                    <div class="text-muted f-s-12">موجودی کم (&lt;۱۰۰kg)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-secondary">
+                    <i class="ti ti-database f-s-18 text-secondary"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.count_all }}</div>
+                    <div class="text-muted f-s-12">کل بچ‌ها</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# فیلتر #}
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="ti ti-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="بچ، تأمین‌کننده، محل..."
+                       value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">همه دسته‌ها</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" {% if cat_filter == c.id|stringformat:"s" %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">همه وضعیت‌ها</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="grade" class="form-select form-select-sm">
+                <option value="">همه کیفیت‌ها</option>
+                {% for val, label in grade_choices %}
+                <option value="{{ val }}" {% if grade_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary btn-sm">فیلتر</button>
+            {% if search_query or cat_filter or status_filter or grade_filter %}
+            <a href="{% url 'inventory:fiber_list' %}" class="btn btn-outline-secondary btn-sm">پاک</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+
+{# ── جدول ──────────────────────────────────────────────────── #}
+{% block table_headers %}
+<th>#</th>
+<th>شماره بچ</th>
+<th>دسته / تأمین‌کننده</th>
+<th>موجودی فعلی</th>
+<th>مصرف</th>
+<th>کیفیت</th>
+<th>محل انبار</th>
+<th>وضعیت</th>
+<th>تاریخ ورود</th>
+<th>عملیات</th>
+{% endblock %}
+
+{% block table_body %}
+{% for item in object_list %}
+<tr class="{% if item.status == 'consumed' %}table-light text-muted{% elif item.current_weight < 100 and item.status == 'available' %}table-warning{% endif %}">
+    <td class="text-muted f-s-13">{{ forloop.counter }}</td>
+    <td>
+        <a href="{% url 'inventory:fiber_transactions' item.pk %}"
+           class="f-w-600 text-decoration-none font-monospace">
+            {{ item.batch_number }}
+        </a>
+        {% if item.lot_number %}
+        <div class="text-muted f-s-11">لات: {{ item.lot_number }}</div>
+        {% endif %}
+    </td>
+    <td>
+        <span class="badge bg-light-primary text-primary">{{ item.category.name }}</span>
+        {% if item.supplier %}
+        <div class="text-muted f-s-12 mt-1">{{ item.supplier }}</div>
+        {% endif %}
+    </td>
+    <td>
+        <span class="f-w-700 {% if item.current_weight < 100 and item.status == 'available' %}text-danger{% endif %}">
+            {{ item.current_weight|floatformat:1 }}
+        </span>
+        <span class="text-muted f-s-11"> / {{ item.initial_weight|floatformat:0 }} kg</span>
+        {% if item.current_weight < 100 and item.status == 'available' %}
+        <i class="ti ti-alert-triangle text-warning ms-1" title="موجودی کم"></i>
+        {% endif %}
+    </td>
+    <td style="min-width:80px;">
+        {% with pct=item.consumed_pct %}
+        <div class="progress" style="height:5px;">
+            <div class="progress-bar {% if pct < 50 %}bg-success{% elif pct < 80 %}bg-warning{% else %}bg-danger{% endif %}"
+                 style="width:{{ pct }}%"></div>
+        </div>
+        <small class="text-muted">{{ pct|floatformat:0 }}%</small>
+        {% endwith %}
+    </td>
+    <td>
+        {% if item.quality_grade == 'A' %}
+        <span class="badge bg-success">A — درجه یک</span>
+        {% elif item.quality_grade == 'B' %}
+        <span class="badge bg-warning text-dark">B — درجه دو</span>
+        {% else %}
+        <span class="badge bg-danger">C — درجه سه</span>
+        {% endif %}
+    </td>
+    <td class="f-s-13 text-muted">{{ item.warehouse_loc|default:"—" }}</td>
+    <td>
+        {% if item.status == 'available' %}
+        <span class="badge bg-light-success text-success"><i class="ti ti-circle-filled f-s-9"></i> موجود</span>
+        {% elif item.status == 'consumed' %}
+        <span class="badge bg-light-danger text-danger">مصرف شده</span>
+        {% elif item.status == 'reserved' %}
+        <span class="badge bg-light-warning text-warning">رزرو</span>
+        {% else %}
+        <span class="badge bg-light-secondary text-secondary">{{ item.get_status_display }}</span>
+        {% endif %}
+    </td>
+    <td class="f-s-13">{{ item.received_date|to_jalali }}</td>
+    <td>
+        <div class="btn-group btn-group-sm">
+            {% if item.status == 'available' %}
+            <button class="btn btn-outline-danger" title="خروج/مصرف"
+                    onclick="openIssueModal({{ item.pk }}, '{{ item.batch_number }}', {{ item.current_weight }})">
+                <i class="ti ti-package-export"></i>
+            </button>
+            <button class="btn btn-outline-warning" title="تعدیل موجودی"
+                    onclick="openAdjustModal({{ item.pk }}, '{{ item.batch_number }}', {{ item.current_weight }})">
+                <i class="ti ti-adjustments"></i>
+            </button>
+            {% endif %}
+            <a href="{% url 'inventory:fiber_transactions' item.pk %}"
+               class="btn btn-outline-secondary" title="تاریخچه تراکنش‌ها">
+                <i class="ti ti-history"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% endfor %}
+{% endblock %}
+
+
+{# ════════════════════════════════════════════════════════════ #}
+{# Modal‌ها                                                    #}
+{# ════════════════════════════════════════════════════════════ #}
+{% block extra_content %}
+
+{# ── Modal ورود الیاف ──────────────────────────────────────── #}
+<div class="modal fade" id="receiveModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success bg-opacity-10">
+                <h5 class="modal-title text-success">
+                    <i class="ti ti-package-import me-2"></i>ورود الیاف به انبار
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="receiveForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        {# ردیف ۱: دسته و شماره بچ #}
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">دسته الیاف <span class="text-danger">*</span></label>
+                            <select name="category" class="form-select" required>
+                                <option value="">— انتخاب دسته —</option>
+                                {% for c in categories %}
+                                <option value="{{ c.id }}">{{ c.code }} — {{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شماره بچ</label>
+                            <input type="text" name="batch_number" class="form-control font-monospace"
+                                   value="{{ suggested_batch }}" dir="ltr"
+                                   placeholder="خودکار تولید می‌شود">
+                            <div class="form-text">خالی بگذارید تا خودکار شماره‌گذاری شود</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">شماره لات تأمین‌کننده</label>
+                            <input type="text" name="lot_number" class="form-control" dir="ltr"
+                                   placeholder="اختیاری">
+                        </div>
+
+                        {# ردیف ۲: تأمین‌کننده و رنگ #}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">تأمین‌کننده</label>
+                            <input type="text" name="supplier" class="form-control"
+                                   placeholder="نام شرکت تأمین‌کننده">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">رنگ اولیه</label>
+                            <input type="text" name="color_raw" class="form-control"
+                                   placeholder="سفید، اکرو...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">درجه کیفیت</label>
+                            <div class="d-flex gap-1">
+                                {% for val, label in grade_choices %}
+                                <label class="btn btn-sm flex-fill text-center
+                                    {% if val == 'A' %}btn-outline-success{% elif val == 'B' %}btn-outline-warning{% else %}btn-outline-danger{% endif %}
+                                    grade-btn">
+                                    <input type="radio" name="quality_grade" value="{{ val }}" class="d-none"
+                                           {% if val == 'A' %}checked{% endif %}>
+                                    {{ val }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        {# ردیف ۳: مشخصات فنی #}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                وزن ورودی (kg) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" name="initial_weight" class="form-control"
+                                       step="0.001" min="0.001" required placeholder="مثال: 500">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">دنیر</label>
+                            <input type="number" name="denier" class="form-control"
+                                   step="0.01" min="0" placeholder="مثال: 1.5">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">طول الیاف (mm)</label>
+                            <input type="number" name="staple_length" class="form-control"
+                                   step="0.1" min="0" placeholder="مثال: 38">
+                        </div>
+
+                        {# ردیف ۴: تاریخ و محل #}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">تاریخ ورود</label>
+                            <input type="date" name="received_date" class="form-control"
+                                   value="{{ today|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">محل انبار</label>
+                            <input type="text" name="warehouse_loc" class="form-control"
+                                   placeholder="ردیف ۳ - قفسه ب">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">قیمت (ریال/kg)</label>
+                            <input type="number" name="unit_price" class="form-control"
+                                   step="1000" min="0" placeholder="اختیاری">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">یادداشت</label>
+                            <input type="text" name="notes" class="form-control"
+                                   placeholder="نکات فنی، شرایط حمل، و...">
+                        </div>
+                    </div>
+
+                    <div id="receiveError" class="alert alert-danger mt-3 d-none py-2">
+                        <i class="ti ti-alert-circle me-1"></i>
+                        <span id="receiveErrorText"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-success" id="receiveBtn">
+                        <i class="ti ti-package-import me-1"></i> ثبت ورود
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal خروج/مصرف ──────────────────────────────────────── #}
+<div class="modal fade" id="issueModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-danger bg-opacity-10">
+                <h5 class="modal-title text-danger">
+                    <i class="ti ti-package-export me-2"></i>خروج از انبار
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="issueForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-light border py-2 mb-3">
+                        <div class="f-s-12 text-muted">بچ</div>
+                        <div class="f-w-600 font-monospace" id="issueBatchNum">—</div>
+                        <div class="f-s-12 text-muted mt-1">موجودی فعلی</div>
+                        <div class="f-w-700 text-success" id="issueCurrentWeight">—</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">مقدار خروج (kg) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" name="quantity" class="form-control"
+                                   step="0.001" min="0.001" required id="issueQty">
+                            <span class="input-group-text">kg</span>
+                        </div>
+                        <div class="form-text" id="issueRemaining"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">دلیل</label>
+                        <select name="notes" class="form-select">
+                            <option value="مصرف در حلاجی">مصرف در حلاجی</option>
+                            <option value="برگشت به تأمین‌کننده">برگشت به تأمین‌کننده</option>
+                            <option value="ضایعات">ضایعات</option>
+                            <option value="انتقال به انبار دیگر">انتقال به انبار دیگر</option>
+                        </select>
+                    </div>
+                    <div id="issueError" class="alert alert-danger py-2 d-none">
+                        <span id="issueErrorText"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-danger" id="issueBtn">
+                        <i class="ti ti-check me-1"></i> ثبت خروج
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal تعدیل ──────────────────────────────────────────── #}
+<div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-warning bg-opacity-10">
+                <h5 class="modal-title text-warning">
+                    <i class="ti ti-adjustments me-2"></i>تعدیل موجودی
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="adjustForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-light border py-2 mb-3">
+                        <div class="f-s-12 text-muted">بچ: <span id="adjustBatchNum" class="font-monospace f-w-600"></span></div>
+                        <div class="f-s-12 text-muted">موجودی فعلی: <span id="adjustCurrentWeight" class="f-w-700 text-success"></span> kg</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">موجودی واقعی (kg) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" name="new_weight" class="form-control"
+                                   step="0.001" min="0" required id="adjustNewWeight">
+                            <span class="input-group-text">kg</span>
+                        </div>
+                        <div class="form-text">موجودی واقعی شمارش‌شده را وارد کنید</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">توضیح</label>
+                        <input type="text" name="notes" class="form-control"
+                               placeholder="انبارگردانی، تفاوت وزن کشی...">
+                    </div>
+                    <div id="adjustError" class="alert alert-danger py-2 d-none">
+                        <span id="adjustErrorText"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-warning" id="adjustBtn">
+                        <i class="ti ti-check me-1"></i> ثبت تعدیل
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// ── متغیرهای جاری ────────────────────────────────────────
+let currentFiberId = null;
+let currentFiberMaxWeight = 0;
+
+const modals = {
+    receive: new bootstrap.Modal(document.getElementById('receiveModal')),
+    issue:   new bootstrap.Modal(document.getElementById('issueModal')),
+    adjust:  new bootstrap.Modal(document.getElementById('adjustModal')),
+};
+
+// ── ورود الیاف ───────────────────────────────────────────
+function openReceiveModal() {
+    document.getElementById('receiveForm').reset();
+    document.getElementById('receiveError').classList.add('d-none');
+    // پیش‌فرض‌ها
+    document.querySelector('[name=received_date]').value = new Date().toISOString().slice(0,10);
+    document.querySelector('.grade-btn').classList.add('active');
+    modals.receive.show();
+}
+
+// ── خروج از انبار ────────────────────────────────────────
+function openIssueModal(id, batchNum, currentWeight) {
+    currentFiberId = id;
+    currentFiberMaxWeight = parseFloat(currentWeight);
+    document.getElementById('issueBatchNum').textContent = batchNum;
+    document.getElementById('issueCurrentWeight').textContent = currentWeight + ' kg';
+    document.getElementById('issueQty').value = '';
+    document.getElementById('issueQty').max = currentWeight;
+    document.getElementById('issueRemaining').textContent = '';
+    document.getElementById('issueError').classList.add('d-none');
+    modals.issue.show();
+}
+
+// ── تعدیل موجودی ─────────────────────────────────────────
+function openAdjustModal(id, batchNum, currentWeight) {
+    currentFiberId = id;
+    document.getElementById('adjustBatchNum').textContent = batchNum;
+    document.getElementById('adjustCurrentWeight').textContent = currentWeight;
+    document.getElementById('adjustNewWeight').value = currentWeight;
+    document.getElementById('adjustError').classList.add('d-none');
+    modals.adjust.show();
+}
+
+// ── محاسبه مانده در modal خروج ───────────────────────────
+document.getElementById('issueQty').addEventListener('input', function() {
+    const qty = parseFloat(this.value) || 0;
+    const remaining = currentFiberMaxWeight - qty;
+    const el = document.getElementById('issueRemaining');
+    if (qty > 0 && remaining >= 0) {
+        el.textContent = `پس از خروج: ${remaining.toFixed(1)} kg باقی می‌ماند`;
+        el.className = remaining < 50 ? 'form-text text-danger fw-semibold' : 'form-text text-muted';
+    } else {
+        el.textContent = '';
+    }
+});
+
+// ── درجه کیفیت toggle ────────────────────────────────────
+document.querySelectorAll('.grade-btn').forEach(btn => {
+    const radio = btn.querySelector('input[type=radio]');
+    if (radio?.checked) btn.classList.add('active');
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+
+// ── ارسال فرم‌ها ──────────────────────────────────────────
+async function submitForm(formId, url, btnId, errorId, errorTextId, modalKey) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>...';
+    document.getElementById(errorId).classList.add('d-none');
+
+    try {
+        const formData = new FormData(document.getElementById(formId));
+        const resp = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            modals[modalKey].hide();
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 900);
+        } else {
+            document.getElementById(errorId).classList.remove('d-none');
+            document.getElementById(errorTextId).textContent = data.error || 'خطا';
+        }
+    } catch(e) {
+        document.getElementById(errorId).classList.remove('d-none');
+        document.getElementById(errorTextId).textContent = 'خطای شبکه';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+}
+
+document.getElementById('receiveForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitForm('receiveForm', '/inventory/fibers/receive/', 'receiveBtn',
+               'receiveError', 'receiveErrorText', 'receive');
+});
+
+document.getElementById('issueForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitForm('issueForm', `/inventory/fibers/${currentFiberId}/issue/`, 'issueBtn',
+               'issueError', 'issueErrorText', 'issue');
+});
+
+document.getElementById('adjustForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitForm('adjustForm', `/inventory/fibers/${currentFiberId}/adjust/`, 'adjustBtn',
+               'adjustError', 'adjustErrorText', 'adjust');
+});
+
+// ── Toast ─────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+    const colors = { success: '#198754', danger: '#dc3545', warning: '#c49a00' };
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);
+        background:${colors[type]||colors.success};color:#fff;padding:12px 28px;
+        border-radius:8px;z-index:9999;font-weight:600;box-shadow:0 4px 15px rgba(0,0,0,.2);
+        font-family:inherit;max-width:90vw;text-align:center;`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+</script>
+{% endblock %}

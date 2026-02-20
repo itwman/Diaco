@@ -1,0 +1,414 @@
+erDiagram
+    %% ============ CORE ============
+    accounts_user {
+        bigint id PK
+        varchar username UK
+        varchar first_name
+        varchar last_name
+        varchar national_code UK
+        enum role "admin|manager|supervisor|operator|viewer"
+        enum department
+        boolean is_active
+    }
+
+    core_machine {
+        bigint id PK
+        varchar code UK "CR-01, RG-15"
+        varchar name
+        enum machine_type "blowroom|carding|passage|finisher|ring|dyeing|boiler|dryer"
+        enum status "active|inactive|maintenance"
+        json specs "AI-ready"
+    }
+
+    core_shift {
+        bigint id PK
+        varchar name "صبح|عصر|شب"
+        varchar code UK "A|B|C"
+        time start_time
+        time end_time
+    }
+
+    core_auditlog {
+        bigint id PK
+        bigint user_id FK
+        enum action "create|update|delete"
+        varchar table_name
+        bigint record_id
+        json old_values
+        json new_values
+    }
+
+    core_notification {
+        bigint id PK
+        bigint recipient_id FK
+        varchar title
+        enum notif_type "info|warning|danger|maintenance"
+        boolean is_read
+    }
+
+    %% ============ INVENTORY ============
+    inventory_fibercategory {
+        bigint id PK
+        varchar name "پلی‌استر|اکریلیک|پشم"
+        varchar code UK
+    }
+
+    inventory_fiberstock {
+        bigint id PK
+        bigint category_id FK
+        varchar batch_number UK
+        varchar lot_number
+        varchar supplier
+        decimal denier
+        decimal initial_weight
+        decimal current_weight
+        date received_date "FIFO key"
+        enum status "available|reserved|consumed"
+        enum quality_grade "A|B|C"
+    }
+
+    inventory_dyestock {
+        bigint id PK
+        varchar code UK
+        varchar name
+        enum dye_type "reactive|disperse|acid|vat"
+        varchar batch_number
+        decimal initial_weight
+        decimal current_weight
+        date received_date
+        enum status
+    }
+
+    inventory_chemicalstock {
+        bigint id PK
+        varchar code UK
+        enum chemical_type "acid|alkali|salt|softener"
+        varchar batch_number
+        decimal initial_amount
+        decimal current_amount
+        decimal concentration
+        enum status
+    }
+
+    inventory_stocktransaction {
+        bigint id PK
+        enum stock_type "fiber|dye|chemical"
+        bigint stock_id
+        enum transaction_type "receive|issue|return|adjust"
+        decimal quantity
+        varchar reference_type
+        bigint reference_id
+        bigint performed_by_id FK
+    }
+
+    %% ============ ORDERS ============
+    orders_customer {
+        bigint id PK
+        varchar name
+        varchar company
+        varchar phone
+        decimal credit_limit
+    }
+
+    orders_colorshade {
+        bigint id PK
+        varchar code UK "SH-1024"
+        varchar name
+        varchar color_hex
+        json recipe "فرمول رنگ"
+        boolean is_approved
+        bigint approved_by_id FK
+    }
+
+    orders_colorapprovalhistory {
+        bigint id PK
+        bigint color_shade_id FK
+        bigint customer_id FK
+        enum status "submitted|approved|rejected|revised"
+        varchar sample_image
+    }
+
+    orders_order {
+        bigint id PK
+        varchar order_number UK "ORD-14030115-001"
+        bigint customer_id FK
+        bigint color_shade_id FK
+        varchar yarn_type
+        varchar yarn_count
+        decimal quantity_kg
+        enum priority "low|normal|high|urgent"
+        enum status "draft|confirmed|in_production|ready|delivered"
+        tinyint progress_pct
+    }
+
+    %% ============ BLOWROOM ============
+    blowroom_batch {
+        bigint id PK
+        varchar batch_number UK "BL-14030115-001"
+        bigint order_id FK
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        decimal total_input_weight
+        decimal output_weight
+        decimal waste_pct
+        json blend_recipe
+        enum status
+        json metadata "AI-ready"
+    }
+
+    blowroom_batchinput {
+        bigint id PK
+        bigint batch_id FK
+        bigint fiber_stock_id FK
+        decimal weight_used
+        decimal percentage
+    }
+
+    %% ============ CARDING ============
+    carding_production {
+        bigint id PK
+        varchar batch_number UK "CD-14030115-001"
+        bigint blowroom_batch_id FK
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        decimal speed_rpm
+        decimal sliver_count "نمره فتیله"
+        decimal input_weight
+        decimal output_weight
+        decimal waste_pct
+        time cleaning_time
+        int neps_count "کیفیت"
+        enum status
+        json metadata "AI-ready"
+    }
+
+    %% ============ PASSAGE (CRITICAL) ============
+    passage_production {
+        bigint id PK
+        varchar batch_number UK "PS-14030115-001"
+        tinyint passage_number "1=اول 2=دوم"
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        tinyint num_inputs "6-8 ورودی"
+        decimal draft_ratio "نسبت کشش"
+        decimal output_sliver_count
+        decimal evenness_cv "AI: یکنواختی"
+        enum status
+        json metadata "AI-ready"
+    }
+
+    passage_input {
+        bigint id PK
+        bigint passage_prod_id FK
+        tinyint input_position "1 تا 8"
+        enum source_type "carding|passage"
+        bigint source_id
+        varchar source_batch_number
+        decimal weight_used
+    }
+
+    %% ============ FINISHER ============
+    finisher_production {
+        bigint id PK
+        varchar batch_number UK "FN-14030115-001"
+        bigint passage_prod_id FK
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        decimal draft_ratio
+        decimal twist_tpm
+        decimal output_sliver_count
+        enum status
+        json metadata "AI-ready"
+    }
+
+    %% ============ SPINNING ============
+    spinning_production {
+        bigint id PK
+        varchar batch_number UK "RG-14030115-001"
+        bigint finisher_prod_id FK
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        int spindle_speed_rpm "سرعت دوک"
+        decimal twist_tpm "تاب"
+        decimal yarn_count "نمره نخ"
+        varchar traveler_number "شماره شیطانک"
+        int num_spindles_active
+        int breakage_count "پارگی"
+        decimal efficiency_pct "OEE"
+        enum status
+        json metadata "AI-ready"
+    }
+
+    spinning_travelerreplacement {
+        bigint id PK
+        bigint machine_id FK
+        bigint operator_id FK
+        datetime replaced_at
+        varchar new_traveler
+        enum reason "scheduled|worn|breakage"
+        decimal running_hours
+        datetime next_due_at "PM alert"
+    }
+
+    %% ============ DYEING ============
+    dyeing_batch {
+        bigint id PK
+        varchar batch_number UK "DY-14030115-001"
+        bigint order_id FK
+        bigint color_shade_id FK
+        bigint machine_id FK
+        bigint operator_id FK
+        decimal fiber_weight
+        decimal liquor_ratio
+        decimal temperature
+        decimal ph_value
+        enum status
+        json metadata "AI-ready"
+    }
+
+    dyeing_chemicalusage {
+        bigint id PK
+        bigint dyeing_batch_id FK
+        enum material_type "dye|chemical"
+        bigint dye_stock_id FK
+        bigint chemical_stock_id FK
+        decimal quantity_used
+        varchar step_name
+    }
+
+    dyeing_boilerlog {
+        bigint id PK
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        decimal pressure_bar
+        decimal temperature_c
+        decimal fuel_consumed
+        enum status
+        json metadata "AI-ready"
+    }
+
+    dyeing_dryerlog {
+        bigint id PK
+        bigint machine_id FK
+        bigint operator_id FK
+        bigint dyeing_batch_id FK
+        bigint shift_id FK
+        decimal temperature_c
+        int duration_min
+        decimal humidity_pct
+        json metadata "AI-ready"
+    }
+
+    %% ============ MAINTENANCE ============
+    maintenance_schedule {
+        bigint id PK
+        bigint machine_id FK
+        enum maintenance_type "preventive|corrective|predictive"
+        varchar title
+        enum frequency "daily|weekly|monthly|quarterly"
+        datetime next_due_at "هشدار"
+        bigint assigned_to_id FK
+        enum priority
+    }
+
+    maintenance_workorder {
+        bigint id PK
+        varchar wo_number UK "WO-14030115-001"
+        bigint schedule_id FK
+        bigint machine_id FK
+        enum wo_type "preventive|corrective|emergency"
+        bigint reported_by_id FK
+        bigint assigned_to_id FK
+        enum status "open|in_progress|completed"
+        int downtime_min
+    }
+
+    maintenance_downtimelog {
+        bigint id PK
+        bigint machine_id FK
+        bigint work_order_id FK
+        bigint operator_id FK
+        bigint shift_id FK
+        datetime start_time
+        datetime end_time
+        enum reason_category "mechanical|electrical|material|operator"
+        varchar reason_detail
+        json metadata "Predictive AI"
+    }
+
+    maintenance_machineservicedate {
+        bigint id PK
+        bigint machine_id FK
+        varchar service_type
+        date service_date
+        date next_service
+        json parts_replaced
+    }
+
+    %% ============ RELATIONSHIPS ============
+    
+    %% Core
+    accounts_user ||--o{ core_auditlog : "logs"
+    accounts_user ||--o{ core_notification : "receives"
+    
+    %% Inventory
+    inventory_fibercategory ||--o{ inventory_fiberstock : "categorizes"
+    accounts_user ||--o{ inventory_stocktransaction : "performs"
+    
+    %% Orders
+    orders_customer ||--o{ orders_order : "places"
+    orders_customer ||--o{ orders_colorapprovalhistory : "reviews"
+    orders_colorshade ||--o{ orders_colorapprovalhistory : "tracked"
+    orders_colorshade ||--o{ orders_order : "specifies"
+    accounts_user ||--o{ orders_colorshade : "approves"
+    
+    %% Blowroom
+    orders_order ||--o{ blowroom_batch : "starts production"
+    core_machine ||--o{ blowroom_batch : "processes"
+    accounts_user ||--o{ blowroom_batch : "operates"
+    core_shift ||--o{ blowroom_batch : "during"
+    blowroom_batch ||--o{ blowroom_batchinput : "consumes"
+    inventory_fiberstock ||--o{ blowroom_batchinput : "supplied from"
+    
+    %% Carding
+    blowroom_batch ||--o{ carding_production : "feeds"
+    core_machine ||--o{ carding_production : "processes"
+    
+    %% Passage (CRITICAL multi-input)
+    carding_production ||--o{ passage_input : "input source"
+    passage_production ||--o{ passage_input : "input source (2nd pass)"
+    passage_production ||--o{ passage_input : "has inputs"
+    core_machine ||--o{ passage_production : "processes"
+    
+    %% Finisher
+    passage_production ||--o{ finisher_production : "feeds"
+    core_machine ||--o{ finisher_production : "processes"
+    
+    %% Spinning
+    finisher_production ||--o{ spinning_production : "feeds"
+    core_machine ||--o{ spinning_production : "processes"
+    core_machine ||--o{ spinning_travelerreplacement : "maintained"
+    
+    %% Dyeing
+    orders_colorshade ||--o{ dyeing_batch : "dyes to"
+    core_machine ||--o{ dyeing_batch : "processes"
+    dyeing_batch ||--o{ dyeing_chemicalusage : "uses"
+    inventory_dyestock ||--o{ dyeing_chemicalusage : "consumed"
+    inventory_chemicalstock ||--o{ dyeing_chemicalusage : "consumed"
+    dyeing_batch ||--o{ dyeing_dryerlog : "dried"
+    core_machine ||--o{ dyeing_boilerlog : "logged"
+    core_machine ||--o{ dyeing_dryerlog : "logged"
+    
+    %% Maintenance
+    core_machine ||--o{ maintenance_schedule : "scheduled"
+    core_machine ||--o{ maintenance_workorder : "serviced"
+    core_machine ||--o{ maintenance_downtimelog : "stopped"
+    core_machine ||--o{ maintenance_machineservicedate : "serviced"
+    maintenance_schedule ||--o{ maintenance_workorder : "generates"
+    maintenance_workorder ||--o{ maintenance_downtimelog : "causes"

@@ -1,0 +1,388 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت دولاتابی TFO{% endblock %}
+{% block header_icon %}infinity{% endblock %}
+{% block header_title %}ثبت تولید دولاتابی TFO{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --tfo-main: #7c3aed;
+        --tfo-light: #ede9fe;
+        --tfo-grad: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        --tfo-shadow: rgba(139, 92, 246, 0.3);
+    }
+
+    .tfo-header-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--tfo-grad); color: white;
+        padding: 10px 20px; border-radius: 16px;
+        font-size: 0.9rem; font-weight: 700;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px var(--tfo-shadow);
+    }
+
+    .tablet-card-title i { color: var(--tfo-main) !important; }
+
+    .tablet-btn-tfo {
+        background: var(--tfo-grad); color: white;
+        box-shadow: 0 4px 15px var(--tfo-shadow);
+    }
+    .tablet-btn-tfo:hover {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: white; box-shadow: 0 6px 20px var(--tfo-shadow);
+    }
+
+    /* انتخاب جهت تاب */
+    .twist-group { display: flex; gap: 12px; }
+    .twist-btn {
+        flex: 1; min-height: 70px;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 6px;
+        border: 2px solid #e2e8f0; border-radius: 16px;
+        cursor: pointer; background: #f8fafc;
+        transition: all 0.2s; user-select: none;
+    }
+    .twist-btn .twist-symbol {
+        font-size: 2rem; font-weight: 900; line-height: 1;
+    }
+    .twist-btn .twist-name {
+        font-size: 0.8rem; font-weight: 700; color: #64748b;
+    }
+    .twist-btn.active-s {
+        background: var(--tfo-light); border-color: var(--tfo-main);
+        box-shadow: 0 4px 12px var(--tfo-shadow);
+    }
+    .twist-btn.active-s .twist-symbol,
+    .twist-btn.active-s .twist-name { color: var(--tfo-main); }
+    .twist-btn.active-z {
+        background: #fef3c7; border-color: #d97706;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    }
+    .twist-btn.active-z .twist-symbol,
+    .twist-btn.active-z .twist-name { color: #d97706; }
+
+    /* انتخاب تعداد لا */
+    .ply-group { display: flex; gap: 10px; }
+    .ply-btn {
+        flex: 1; min-height: 56px;
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid #e2e8f0; border-radius: 14px;
+        cursor: pointer; background: #f8fafc;
+        font-size: 1.2rem; font-weight: 800; color: #64748b;
+        transition: all 0.2s;
+    }
+    .ply-btn.active {
+        background: var(--tfo-light); border-color: var(--tfo-main);
+        color: var(--tfo-main);
+    }
+
+    /* TPM display */
+    .tpm-display {
+        background: var(--tfo-light);
+        border: 2px solid #c4b5fd;
+        border-radius: 14px;
+        padding: 16px;
+        text-align: center;
+        margin-top: 12px;
+    }
+    .tpm-val { font-size: 2rem; font-weight: 800; color: var(--tfo-main); }
+    .tpm-range { font-size: 0.8rem; color: #7c3aed; margin-top: 4px; }
+    .tpm-range.warn { color: #d97706; }
+    .tpm-range.ok { color: #16a34a; }
+
+    /* وزن */
+    .weight-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .weight-box {
+        background: #f8fafc; border: 2px solid #e2e8f0;
+        border-radius: 14px; padding: 14px; text-align: center;
+    }
+    .weight-box label { font-size: 0.8rem; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 8px; }
+    .weight-box input {
+        width: 100%; border: none; background: transparent;
+        font-size: 1.3rem; font-weight: 700; text-align: center; color: #1e293b; outline: none;
+    }
+    .weight-box input:focus { color: var(--tfo-main); }
+    .weight-box.primary { border-color: var(--tfo-main); background: var(--tfo-light); }
+
+    /* شمارنده پارگی */
+    .breakage-counter {
+        display: flex; align-items: center; gap: 12px;
+        background: #fdf4ff; border: 2px solid #e9d5ff;
+        border-radius: 14px; padding: 14px 18px;
+    }
+    .breakage-counter.high { background: #fff1f2; border-color: #fca5a5; }
+    .counter-btn {
+        width: 48px; height: 48px; border-radius: 50%;
+        border: 2px solid #e2e8f0; background: white;
+        font-size: 1.5rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; transition: all 0.15s; flex-shrink: 0;
+    }
+    .counter-btn:active { transform: scale(0.9); }
+    .counter-btn.minus { color: #ef4444; border-color: #fca5a5; }
+    .counter-btn.minus:hover { background: #fee2e2; }
+    .counter-btn.plus  { color: var(--tfo-main); border-color: #c4b5fd; }
+    .counter-btn.plus:hover { background: var(--tfo-light); }
+    .counter-value {
+        flex: 1; text-align: center;
+        font-size: 2rem; font-weight: 800; color: var(--tfo-main);
+    }
+    .counter-value.zero { color: #16a34a; }
+    .counter-label { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+
+    .quick-hint {
+        background: #fdf4ff; border-right: 4px solid #c084fc;
+        border-radius: 10px; padding: 12px 16px;
+        font-size: 0.85rem; color: #6b21a8;
+        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: #a855f7; }
+
+    .d-none { display: none; }
+</style>
+
+<form method="post" id="tfoForm">
+    {% csrf_token %}
+
+    <div class="tfo-header-badge">
+        <i class="ti ti-infinity"></i> دولاتابی TFO
+    </div>
+
+    <div class="quick-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>دو یا چند نخ با هم تاب می‌خورند. جهت تاب باید مخالف رینگ باشد (رینگ Z → TFO S).</span>
+    </div>
+
+    <!-- ماشین + ورودی -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین و ورودی</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین TFO <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">بچ بوبین‌پیچی ورودی</label>
+                <select name="winding_production" class="form-select">
+                    <option value="">انتخاب (اختیاری)...</option>
+                    {% for w in winding_batches %}
+                    <option value="{{ w.id }}">
+                        {{ w.batch_number }}{% if w.output_weight_kg %} — {{ w.output_weight_kg }} kg{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- تعداد لا -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-layers-intersect"></i> تعداد لا</div>
+        <div class="ply-group">
+            <label class="ply-btn active" id="ply2Btn">
+                <input type="radio" name="ply_count" value="2" checked class="d-none">
+                ۲ لا
+            </label>
+            <label class="ply-btn" id="ply3Btn">
+                <input type="radio" name="ply_count" value="3" class="d-none">
+                ۳ لا
+            </label>
+            <label class="ply-btn" id="ply4Btn">
+                <input type="radio" name="ply_count" value="4" class="d-none">
+                ۴ لا
+            </label>
+        </div>
+    </div>
+
+    <!-- تنظیم تاب -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-rotate-clockwise-2"></i> تنظیم تاب</div>
+
+        <label class="form-label" style="margin-bottom:10px;">جهت تاب</label>
+        <div class="twist-group" style="margin-bottom:20px;">
+            <label class="twist-btn active-s" id="btnS">
+                <input type="radio" name="twist_direction" value="S" checked class="d-none">
+                <span class="twist-symbol">S</span>
+                <span class="twist-name">چپ‌تاب</span>
+            </label>
+            <label class="twist-btn" id="btnZ">
+                <input type="radio" name="twist_direction" value="Z" class="d-none">
+                <span class="twist-symbol">Z</span>
+                <span class="twist-name">راست‌تاب</span>
+            </label>
+        </div>
+
+        <label class="form-label">تاب (TPM — دور بر متر)</label>
+        <input type="number" name="twist_tpm" id="tpmInput" class="form-control"
+               placeholder="۲۵۰" min="50" max="600" step="10"
+               oninput="updateTpmDisplay()" required>
+        <div class="tpm-display" id="tpmDisplay">
+            <div class="tpm-val" id="tpmVal">—</div>
+            <div class="tpm-range" id="tpmRange">نخ فرش: ۱۵۰–۴۰۰ دور/متر</div>
+        </div>
+    </div>
+
+    <!-- وزن تولید -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scale"></i> وزن تولید</div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>ورودی (kg) <span class="text-danger">*</span></label>
+                <input type="number" name="input_weight" id="inWeight"
+                       placeholder="۰.۰" step="0.1" min="0" required oninput="calcWaste()">
+            </div>
+            <div class="weight-box">
+                <label>خروجی (kg)</label>
+                <input type="number" name="output_weight" id="outWeight"
+                       placeholder="۰.۰" step="0.1" min="0" oninput="calcWaste()">
+            </div>
+        </div>
+        <div class="tablet-grid" style="margin-top:10px;">
+            <div>
+                <label class="form-label">بوبین ورودی (عدد)</label>
+                <input type="number" name="input_packages" class="form-control" placeholder="۰" min="0">
+            </div>
+            <div>
+                <label class="form-label">بوبین خروجی (عدد)</label>
+                <input type="number" name="output_packages" class="form-control" placeholder="۰" min="0">
+            </div>
+        </div>
+        <div id="wasteInfo" style="display:none; margin-top:12px; padding:10px 16px;
+             background:#fff7f0; border-radius:10px; border-right:4px solid #f97316;
+             font-size:0.9rem; color:#c2410c; font-weight:600;">
+            <i class="ti ti-trash"></i> ضایعات تخمینی: <span id="wasteVal">—</span> kg
+        </div>
+    </div>
+
+    <!-- شمارنده پارگی -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cut"></i> تعداد پارگی در این شیفت</div>
+        <div class="breakage-counter" id="breakageBox">
+            <button type="button" class="counter-btn minus" onclick="changeBreakage(-1)">−</button>
+            <div>
+                <div class="counter-value zero" id="breakageVal">۰</div>
+                <div class="counter-label" style="text-align:center;">پارگی</div>
+            </div>
+            <button type="button" class="counter-btn plus" onclick="changeBreakage(1)">+</button>
+            <input type="hidden" name="breakage_count" id="breakageInput" value="0">
+        </div>
+        <div id="breakageWarn" style="display:none; margin-top:12px; padding:10px 16px;
+             background:#fdf4ff; border-radius:10px; border-right:4px solid #a855f7;
+             font-size:0.85rem; color:#6b21a8; font-weight:600;">
+            <i class="ti ti-alert-triangle"></i>
+            تعداد پارگی بالاست — بررسی کشش و نوع بوبین ورودی توصیه می‌شود
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="تنظیمات غیرمعمول، مشکلات، یا نکات مهم..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-tfo flex-fill" id="submitBtn">
+            <i class="ti ti-check"></i> ثبت دولاتابی TFO
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── جهت تاب
+document.getElementById('btnS').addEventListener('click', function(){
+    this.className = 'twist-btn active-s';
+    document.getElementById('btnZ').className = 'twist-btn';
+});
+document.getElementById('btnZ').addEventListener('click', function(){
+    this.className = 'twist-btn active-z';
+    document.getElementById('btnS').className = 'twist-btn';
+});
+
+// ── تعداد لا
+['ply2Btn','ply3Btn','ply4Btn'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(){
+        ['ply2Btn','ply3Btn','ply4Btn'].forEach(x => document.getElementById(x).className = 'ply-btn');
+        this.className = 'ply-btn active';
+    });
+});
+
+// ── نمایش TPM
+function updateTpmDisplay() {
+    const tpm = parseFloat(document.getElementById('tpmInput').value);
+    const val = document.getElementById('tpmVal');
+    const range = document.getElementById('tpmRange');
+
+    if (!tpm) { val.textContent = '—'; range.className = 'tpm-range'; return; }
+
+    val.textContent = tpm.toLocaleString('fa-IR') + ' TPM';
+    if (tpm < 150) {
+        range.textContent = '⚠ خیلی پایین — نخ فرش: ۱۵۰–۴۰۰';
+        range.className = 'tpm-range warn';
+    } else if (tpm > 400) {
+        range.textContent = '⚠ خیلی بالا — نخ فرش: ۱۵۰–۴۰۰';
+        range.className = 'tpm-range warn';
+    } else {
+        range.textContent = '✓ در محدوده استاندارد نخ فرش';
+        range.className = 'tpm-range ok';
+    }
+}
+
+// ── ضایعات
+function calcWaste() {
+    const inW = parseFloat(document.getElementById('inWeight').value);
+    const outW = parseFloat(document.getElementById('outWeight').value);
+    const info = document.getElementById('wasteInfo');
+    if (inW > 0 && outW > 0 && inW >= outW) {
+        document.getElementById('wasteVal').textContent = (inW - outW).toFixed(1);
+        info.style.display = 'block';
+    } else {
+        info.style.display = 'none';
+    }
+}
+
+// ── شمارنده پارگی
+let breakageCount = 0;
+function changeBreakage(delta) {
+    breakageCount = Math.max(0, breakageCount + delta);
+    const val = document.getElementById('breakageVal');
+    val.textContent = breakageCount.toLocaleString('fa-IR');
+    document.getElementById('breakageInput').value = breakageCount;
+
+    const box = document.getElementById('breakageBox');
+    const warn = document.getElementById('breakageWarn');
+
+    if (breakageCount === 0) {
+        val.className = 'counter-value zero';
+        box.className = 'breakage-counter';
+        warn.style.display = 'none';
+    } else if (breakageCount >= 8) {
+        val.className = 'counter-value';
+        box.className = 'breakage-counter high';
+        warn.style.display = 'block';
+    } else {
+        val.className = 'counter-value';
+        box.className = 'breakage-counter';
+        warn.style.display = 'none';
+    }
+}
+
+// ── جلوگیری از ثبت دوباره
+document.getElementById('tfoForm').addEventListener('submit', function(){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

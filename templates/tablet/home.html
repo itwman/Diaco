@@ -1,0 +1,320 @@
+{% extends "tablet/base.html" %}
+{% load jalali_tags %}
+{% block title %}خانه{% endblock %}
+{% block header_icon %}home{% endblock %}
+{% block header_title %}دیاکو MES{% endblock %}
+
+{% block content %}
+<style>
+    /* بنر خوش‌آمدگویی */
+    .welcome-banner {
+        background: white;
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        position: relative;
+        overflow: hidden;
+    }
+    .welcome-banner::before {
+        content: '';
+        position: absolute;
+        top: -50px; left: -50px;
+        width: 200px; height: 200px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        opacity: 0.05; border-radius: 50%;
+    }
+    .wb-header {
+        display: flex; justify-content: space-between;
+        align-items: center; margin-bottom: 20px; position: relative;
+    }
+    .wb-text h3 {
+        margin: 0; font-size: 1.6rem; font-weight: 700; color: #1e293b;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .wb-text p { margin: 8px 0 0; font-size: 0.95rem; color: #64748b; }
+    .wb-stat {
+        text-align: center;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white; padding: 16px 24px; border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    .wb-stat-val { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .wb-stat-label { font-size: 0.8rem; opacity: 0.9; margin-top: 6px; }
+
+    /* عنوان گروه */
+    .section-group-title {
+        font-size: 0.8rem; font-weight: 700; color: #94a3b8;
+        text-transform: uppercase; letter-spacing: 1px;
+        margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-group-title::after {
+        content: ''; flex: 1; height: 1px; background: #e2e8f0;
+    }
+
+    /* شبکه بخش‌ها */
+    .section-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 8px;
+    }
+    .section-btn {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 10px; min-height: 120px;
+        background: white;
+        border: 2px solid #e2e8f0; border-radius: 20px;
+        text-decoration: none; transition: all 0.3s ease;
+        position: relative; overflow: hidden;
+    }
+    .section-btn::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0;
+        height: 4px; transition: all 0.3s;
+    }
+    .section-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        text-decoration: none;
+    }
+    .sec-icon {
+        width: 56px; height: 56px; border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.7rem; transition: transform 0.3s;
+    }
+    .section-btn:hover .sec-icon { transform: scale(1.12) rotate(5deg); }
+    .sec-label { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+
+    /* رنگ‌بندی خط تولید اصلی */
+    .sec-blowroom::before  { background: #f97316; }
+    .sec-blowroom .sec-icon  { background: #ffedd5; color: #ea580c; }
+    .sec-blowroom:hover  { border-color: #f97316; }
+    .sec-carding::before { background: #3b82f6; }
+    .sec-carding .sec-icon { background: #dbeafe; color: #2563eb; }
+    .sec-carding:hover { border-color: #3b82f6; }
+    .sec-passage::before { background: #22c55e; }
+    .sec-passage .sec-icon { background: #dcfce7; color: #16a34a; }
+    .sec-passage:hover { border-color: #22c55e; }
+    .sec-finisher::before { background: #ef4444; }
+    .sec-finisher .sec-icon { background: #fee2e2; color: #dc2626; }
+    .sec-finisher:hover { border-color: #ef4444; }
+    .sec-spinning::before { background: #8b5cf6; }
+    .sec-spinning .sec-icon { background: #ede9fe; color: #7c3aed; }
+    .sec-spinning:hover { border-color: #8b5cf6; }
+
+    /* رنگ‌بندی تکمیل نخ v2.0 */
+    .sec-winding::before { background: #0891b2; }
+    .sec-winding .sec-icon { background: #cffafe; color: #0891b2; }
+    .sec-winding:hover { border-color: #0891b2; }
+    .sec-tfo::before { background: #7c3aed; }
+    .sec-tfo .sec-icon { background: #ede9fe; color: #7c3aed; }
+    .sec-tfo:hover { border-color: #7c3aed; }
+    .sec-heatset::before { background: #dc2626; }
+    .sec-heatset .sec-icon { background: #fee2e2; color: #dc2626; }
+    .sec-heatset:hover { border-color: #dc2626; }
+
+    /* ابزارها */
+    .sec-downtime::before { background: #f59e0b; }
+    .sec-downtime .sec-icon { background: #fef3c7; color: #d97706; }
+    .sec-downtime:hover { border-color: #f59e0b; }
+    .sec-dashboard::before { background: #06b6d4; }
+    .sec-dashboard .sec-icon { background: #cffafe; color: #0891b2; }
+    .sec-dashboard:hover { border-color: #06b6d4; }
+
+    /* تولید امروز */
+    .today-header {
+        display: flex; justify-content: space-between;
+        align-items: center; margin-bottom: 20px;
+    }
+    .today-header h5 {
+        margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .today-count {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white; padding: 6px 16px; border-radius: 20px;
+        font-size: 0.8rem; font-weight: 700;
+    }
+    .record-item {
+        display: flex; align-items: center; gap: 14px;
+        padding: 14px 0; border-bottom: 1px solid #f1f5f9;
+    }
+    .record-item:last-child { border-bottom: none; }
+    .record-icon {
+        width: 46px; height: 46px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; flex-shrink: 0;
+    }
+    .ri-حلاجی    { background: #ffedd5; color: #ea580c; }
+    .ri-کاردینگ  { background: #dbeafe; color: #2563eb; }
+    .ri-پاساژ    { background: #dcfce7; color: #16a34a; }
+    .ri-فینیشر   { background: #fee2e2; color: #dc2626; }
+    .ri-رینگ     { background: #ede9fe; color: #7c3aed; }
+    .ri-بوبین‌پیچی { background: #cffafe; color: #0891b2; }
+    .ri-دولاتابی { background: #ede9fe; color: #7c3aed; }
+    .ri-هیت‌ست   { background: #fee2e2; color: #dc2626; }
+    .record-info { flex: 1; }
+    .record-batch { font-size: 0.95rem; font-weight: 700; color: #1e293b; direction: ltr; display: inline-block; }
+    .record-meta { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+    .record-status {
+        padding: 5px 12px; border-radius: 12px;
+        font-size: 0.78rem; font-weight: 700;
+        display: flex; align-items: center; gap: 4px;
+    }
+    .status-completed { background: #d1fae5; color: #065f46; }
+    .status-in-progress { background: #dbeafe; color: #1e40af; }
+    .status-other { background: #f1f5f9; color: #475569; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 50px 20px; }
+    .empty-state-icon {
+        width: 80px; height: 80px; margin: 0 auto 16px;
+        border-radius: 50%; background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .empty-state-icon i { font-size: 2.5rem; color: #94a3b8; }
+    .empty-state p { color: #64748b; font-size: 1rem; margin: 0; }
+
+    @media (max-width: 576px) {
+        .wb-header { flex-direction: column; gap: 16px; text-align: center; }
+        .wb-text h3 { font-size: 1.3rem; }
+        .section-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+
+<!-- بنر خوش‌آمدگویی -->
+<div class="welcome-banner">
+    <div class="wb-header">
+        <div class="wb-text">
+            <h3>سلام، {{ user.first_name|default:"اپراتور" }}</h3>
+            <p>{% now "l" %} — {{ selected_line.name|default:"خط انتخاب نشده" }}</p>
+        </div>
+        <div class="wb-stat">
+            <div class="wb-stat-val">{{ today_records|length|default:"0" }}</div>
+            <div class="wb-stat-label">ثبت امروز</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── خط تولید اصلی ───────────────────────────────────── -->
+<p class="section-group-title"><i class="ti ti-settings-2"></i> خط تولید اصلی</p>
+<div class="section-grid" style="margin-bottom:24px;">
+    <a href="{% url 'tablet:blowroom_form' %}" class="section-btn sec-blowroom">
+        <div class="sec-icon"><i class="ti ti-windmill"></i></div>
+        <span class="sec-label">حلاجی</span>
+    </a>
+    <a href="{% url 'tablet:carding_form' %}" class="section-btn sec-carding">
+        <div class="sec-icon"><i class="ti ti-arrows-split-2"></i></div>
+        <span class="sec-label">کاردینگ</span>
+    </a>
+    <a href="{% url 'tablet:passage_form' %}" class="section-btn sec-passage">
+        <div class="sec-icon"><i class="ti ti-arrows-join-2"></i></div>
+        <span class="sec-label">پاساژ</span>
+    </a>
+    <a href="{% url 'tablet:finisher_form' %}" class="section-btn sec-finisher">
+        <div class="sec-icon"><i class="ti ti-adjustments"></i></div>
+        <span class="sec-label">فینیشر</span>
+    </a>
+    <a href="{% url 'tablet:spinning_form' %}" class="section-btn sec-spinning">
+        <div class="sec-icon"><i class="ti ti-rotate-clockwise"></i></div>
+        <span class="sec-label">رینگ</span>
+    </a>
+</div>
+
+<!-- ── تکمیل نخ v2.0 ────────────────────────────────────── -->
+<p class="section-group-title"><i class="ti ti-sparkles"></i> تکمیل نخ (v2.0)</p>
+<div class="section-grid" style="margin-bottom:24px;">
+    <a href="{% url 'tablet:winding_form' %}" class="section-btn sec-winding">
+        <div class="sec-icon"><i class="ti ti-rotate-2"></i></div>
+        <span class="sec-label">بوبین‌پیچی</span>
+    </a>
+    <a href="{% url 'tablet:tfo_form' %}" class="section-btn sec-tfo">
+        <div class="sec-icon"><i class="ti ti-infinity"></i></div>
+        <span class="sec-label">دولاتابی TFO</span>
+    </a>
+    <a href="{% url 'tablet:heatset_form' %}" class="section-btn sec-heatset">
+        <div class="sec-icon"><i class="ti ti-flame"></i></div>
+        <span class="sec-label">هیت‌ست</span>
+    </a>
+</div>
+
+<!-- ── ابزارها ────────────────────────────────────────────── -->
+<p class="section-group-title"><i class="ti ti-tool"></i> ابزارها</p>
+<div class="section-grid" style="margin-bottom:28px; grid-template-columns: 1fr 1fr;">
+    <a href="{% url 'tablet:downtime_form' %}" class="section-btn sec-downtime">
+        <div class="sec-icon"><i class="ti ti-alert-triangle"></i></div>
+        <span class="sec-label">ثبت توقف</span>
+    </a>
+    <a href="{% url 'dashboard:index' %}" class="section-btn sec-dashboard">
+        <div class="sec-icon"><i class="ti ti-dashboard"></i></div>
+        <span class="sec-label">داشبورد</span>
+    </a>
+</div>
+
+<!-- ── تولید امروز ──────────────────────────────────────── -->
+<div class="tablet-card">
+    <div class="today-header">
+        <h5><i class="ti ti-list-check"></i> تولید امروز من</h5>
+        {% if today_records %}
+        <span class="today-count">{{ today_records|length }} ثبت</span>
+        {% endif %}
+    </div>
+
+    {% if today_records %}
+        {% for r in today_records %}
+        <div class="record-item">
+            <div class="record-icon ri-{{ r.section }}">
+                {% if r.section == 'کاردینگ' %}<i class="ti ti-arrows-split-2"></i>
+                {% elif r.section == 'پاساژ' %}<i class="ti ti-arrows-join-2"></i>
+                {% elif r.section == 'رینگ' %}<i class="ti ti-rotate-clockwise"></i>
+                {% elif r.section == 'حلاجی' %}<i class="ti ti-windmill"></i>
+                {% elif r.section == 'فینیشر' %}<i class="ti ti-adjustments"></i>
+                {% elif r.section == 'بوبین‌پیچی' %}<i class="ti ti-rotate-2"></i>
+                {% elif r.section == 'دولاتابی' %}<i class="ti ti-infinity"></i>
+                {% elif r.section == 'هیت‌ست' %}<i class="ti ti-flame"></i>
+                {% else %}<i class="ti ti-package"></i>{% endif %}
+            </div>
+            <div class="record-info">
+                <span class="record-batch">{{ r.batch_number }}</span>
+                <div class="record-meta">{{ r.section }} · {{ r.machine }}</div>
+            </div>
+            {% if r.status == 'completed' %}
+            <span class="record-status status-completed"><i class="ti ti-circle-check"></i> تکمیل</span>
+            {% elif r.status == 'in_progress' %}
+            <span class="record-status status-in-progress"><i class="ti ti-loader"></i> در جریان</span>
+            {% else %}
+            <span class="record-status status-other"><i class="ti ti-clock"></i> {{ r.status }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="ti ti-clipboard-off"></i></div>
+            <p>هنوز تولیدی ثبت نشده — یکی از بخش‌ها را انتخاب کنید!</p>
+        </div>
+    {% endif %}
+</div>
+
+{% if today_downtimes %}
+<!-- ── توقفات امروز ──────────────────────────────────────── -->
+<div class="tablet-card" style="margin-top:16px;">
+    <h6 style="font-weight:700; color:#d97706; display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+        <i class="ti ti-alert-triangle"></i> توقفات امروز
+    </h6>
+    {% for d in today_downtimes %}
+    <div class="record-item">
+        <div class="record-icon" style="background:#fef3c7; color:#d97706;">
+            <i class="ti ti-clock-stop"></i>
+        </div>
+        <div class="record-info">
+            <span class="record-batch" style="font-size:0.85rem;">{{ d.machine.code }}</span>
+            <div class="record-meta">{{ d.get_reason_category_display }}{% if d.duration_min %} · {{ d.duration_min }} دقیقه{% endif %}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

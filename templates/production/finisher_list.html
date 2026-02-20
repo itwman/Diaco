@@ -1,0 +1,3 @@
+{% extends "production/production_base_list.html" %}
+{% block extra_headers %}<th>کشش</th><th>تاب</th><th>نمره خروجی</th>{% endblock %}
+{% block extra_cols %}<td>{{ item.draft_ratio|default:"-" }}</td><td>{{ item.twist_tpm|default:"-" }}</td><td>{{ item.output_sliver_count }}</td>{% endblock %}

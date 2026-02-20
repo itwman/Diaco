@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% load jalali_tags static %}
+
+{% block extra_css %}
+<link href="{% static 'vendor/JalaliDatePicker/jalalidatepicker.min.css' %}" rel="stylesheet">
+<style>
+/* اطمینان از نمایش صحیح picker روی RTL */
+.jdp-container { direction: rtl; font-family: 'Vazirmatn FD', sans-serif !important; }
+</style>
+{% endblock %}
+
+{% block title %}{{ page_title }} | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0">{{ page_title }}</h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">سفارشات</a></li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="orderForm">
+    {% csrf_token %}
+    <div class="row g-4">
+
+        {# ── ستون اصلی (چپ) ──────────────────────────────── #}
+        <div class="col-lg-8">
+
+            {# مشتری و شید رنگی #}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="ti ti-user me-2 text-primary"></i>مشتری و رنگ</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">مشتری <span class="text-danger">*</span></label>
+                            <select name="customer" class="form-select" required id="customerSelect">
+                                <option value="">— انتخاب کنید —</option>
+                                {% for c in customers %}
+                                <option value="{{ c.id }}"
+                                    {% if order and order.customer_id == c.id %}selected
+                                    {% elif request.GET.customer == c.id|stringformat:"s" %}selected
+                                    {% endif %}>
+                                    {{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <a href="{% url 'orders:customer_list' %}" target="_blank" class="text-primary">
+                                    <i class="ti ti-external-link me-1"></i>مدیریت مشتریان
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">شید رنگی</label>
+                            <select name="color_shade" class="form-select" id="shadeSelect">
+                                <option value="">بدون رنگ مشخص</option>
+                                {% for s in shades %}
+                                <option value="{{ s.id }}"
+                                    data-hex="{{ s.color_hex }}"
+                                    {% if order and order.color_shade_id == s.id %}selected{% endif %}>
+                                    {{ s.code }} — {{ s.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div id="colorPreview" class="mt-2 d-none">
+                                <span id="colorDot" style="display:inline-block;width:16px;height:16px;
+                                    border-radius:50%;border:1px solid #ccc;vertical-align:middle;
+                                    margin-left:6px;"></span>
+                                <span id="colorName" class="f-s-13 text-muted"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# مشخصات نخ #}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="ti ti-package me-2 text-primary"></i>مشخصات نخ</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">نوع نخ</label>
+                            <select name="yarn_type" class="form-select" id="yarnTypeSelect">
+                                <option value="">— انتخاب —</option>
+                                <option value="نخ پلی‌استر" {% if order and order.yarn_type == 'نخ پلی‌استر' %}selected{% endif %}>نخ پلی‌استر</option>
+                                <option value="نخ اکریلیک" {% if order and order.yarn_type == 'نخ اکریلیک' %}selected{% endif %}>نخ اکریلیک</option>
+                                <option value="نخ پشمی" {% if order and order.yarn_type == 'نخ پشمی' %}selected{% endif %}>نخ پشمی</option>
+                                <option value="نخ ویسکوز" {% if order and order.yarn_type == 'نخ ویسکوز' %}selected{% endif %}>نخ ویسکوز</option>
+                                <option value="نخ مخلوط PES/VIS" {% if order and order.yarn_type == 'نخ مخلوط PES/VIS' %}selected{% endif %}>نخ مخلوط PES/VIS</option>
+                                <option value="نخ پنبه‌ای" {% if order and order.yarn_type == 'نخ پنبه‌ای' %}selected{% endif %}>نخ پنبه‌ای</option>
+                                <option value="سایر" {% if order and order.yarn_type == 'سایر' %}selected{% endif %}>سایر</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">نمره نخ</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Ne</span>
+                                <input type="text" name="yarn_count" class="form-control" dir="ltr"
+                                       placeholder="مثال: 30/1"
+                                       value="{{ order.yarn_count|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">مقدار (kg) <span class="text-danger">*</span></label>
+                            <input type="number" name="quantity_kg" class="form-control" required
+                                   step="0.001" min="0" id="qtyKg"
+                                   value="{{ order.quantity_kg|default:'' }}"
+                                   oninput="calcTotal()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# قیمت‌گذاری #}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="ti ti-currency-dollar me-2 text-primary"></i>قیمت‌گذاری</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">قیمت واحد (ریال/kg)</label>
+                            <input type="number" name="unit_price" class="form-control"
+                                   step="1000" min="0" id="unitPrice"
+                                   value="{{ order.unit_price|default:'' }}"
+                                   oninput="calcTotal()">
+                        </div>
+                        <div class="col-md-1 text-center pb-2">
+                            <i class="ti ti-x text-muted f-s-18"></i>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">مقدار (kg)</label>
+                            <input type="text" class="form-control bg-light" id="qtyDisplay" readonly>
+                        </div>
+                        <div class="col-md-1 text-center pb-2">
+                            <i class="ti ti-equal text-muted f-s-18"></i>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">مبلغ کل (ریال)</label>
+                            <input type="number" name="total_price" class="form-control"
+                                   id="totalPrice" step="1000"
+                                   value="{{ order.total_price|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# یادداشت #}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="ti ti-note me-2 text-primary"></i>یادداشت</h5>
+                </div>
+                <div class="card-body">
+                    <textarea name="notes" class="form-control" rows="3"
+                              placeholder="مشخصات فنی خاص، نکات بسته‌بندی، شرایط تحویل...">{{ order.notes|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        {# ── ستون کناری (راست) ────────────────────────────── #}
+        <div class="col-lg-4">
+
+            {# تنظیمات سفارش #}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="ti ti-settings me-2 text-primary"></i>تنظیمات</h5>
+                </div>
+                <div class="card-body">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">اولویت</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% for val, label in priority_choices %}
+                            <label class="btn btn-outline-secondary btn-sm flex-fill text-center priority-btn"
+                                   style="min-width:70px;">
+                                <input type="radio" name="priority" value="{{ val }}" class="d-none"
+                                    {% if order and order.priority == val %}checked
+                                    {% elif not order and val == 'normal' %}checked
+                                    {% endif %}>
+                                {% if val == 'urgent' %}🔴{% elif val == 'high' %}🟠{% elif val == 'normal' %}🟡{% else %}⚪{% endif %}
+                                {{ label }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {# ── تاریخ تحویل شمسی ── #}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="ti ti-calendar me-1 text-primary"></i>تاریخ تحویل
+                        </label>
+                        {# فیلد نمایشی — picker شمسی روی این کار می‌کند #}
+                        <div class="input-group">
+                            <input type="text"
+                                   id="delivery_date_jalali"
+                                   class="form-control"
+                                   placeholder="۱۴۰۴/۱۲/۰۱"
+                                   data-jdp
+                                   autocomplete="off"
+                                   readonly
+                                   value="{{ order.delivery_date|to_jalali|default:'' }}">
+                            <span class="input-group-text" style="cursor:pointer"
+                                  onclick="document.getElementById('delivery_date_jalali').click()">
+                                <i class="ti ti-calendar"></i>
+                            </span>
+                        </div>
+                        <div class="form-text text-muted">تاریخ شمسی — کلیک کنید</div>
+                        {# فیلد hidden میلادی — همین مقدار به سرور ارسال می‌شود #}
+                        <input type="hidden" name="delivery_date" id="delivery_date_gregorian"
+                               value="{{ order.delivery_date|default:'' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">خط تولید</label>
+                        <select name="production_line" class="form-select">
+                            <option value="">اختصاص نشده</option>
+                            {% for l in lines %}
+                            <option value="{{ l.id }}"
+                                {% if order and order.production_line_id == l.id %}selected{% endif %}>
+                                {{ l.code }} — {{ l.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {% if not is_create %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">وضعیت</label>
+                        <select name="status" class="form-select">
+                            {% for val, label in status_choices %}
+                            <option value="{{ val }}"
+                                {% if order and order.status == val %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            پیشرفت: <span id="progressVal">{{ order.progress_pct|default:0 }}</span>%
+                        </label>
+                        <input type="range" name="progress_pct" class="form-range"
+                               min="0" max="100" step="5"
+                               value="{{ order.progress_pct|default:0 }}"
+                               oninput="document.getElementById('progressVal').textContent=this.value">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# دکمه‌های عملیات #}
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary w-100 mb-2" id="submitBtn">
+                        <i class="ti ti-check me-1"></i>
+                        {% if is_create %}ثبت سفارش{% else %}ذخیره تغییرات{% endif %}
+                    </button>
+                    <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary w-100">
+                        <i class="ti ti-x me-1"></i> انصراف
+                    </a>
+
+                    {% if not is_create and order %}
+                    <hr>
+                    <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-outline-info w-100 btn-sm">
+                        <i class="ti ti-eye me-1"></i> مشاهده جزئیات
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/JalaliDatePicker/jalalidatepicker.min.js' %}"></script>
+<script>
+
+// ══════════════════════════════════════════════════════════
+// تبدیل شمسی → میلادی (الگوریتم Borkowski)
+// ══════════════════════════════════════════════════════════
+function jalaliToGregorian(jy, jm, jd) {
+    jy = parseInt(jy); jm = parseInt(jm); jd = parseInt(jd);
+    if (!jy || !jm || !jd) return '';
+    var jy1 = jy + 979, jm1 = jm - 1, jd1 = jd - 1;
+    var mo = [0,31,59,90,120,151,181,212,243,273,304,334];
+    var jdn = 365*jy1 + Math.floor((jy1+23)/33)*8 +
+              Math.floor(((jy1%33)+3)/4) + 78 + jd1 + mo[jm1];
+    if (jm1 > 5) jdn += 1;
+    var gdn = jdn - 1948440 + 36525;
+    gdn -= Math.floor(gdn/36524.25)*100 - Math.floor(gdn/146097)*400;
+    var lp = Math.floor((gdn-1)/1460) - Math.floor((gdn-1)/36524) + Math.floor((gdn-1)/146096);
+    var y  = Math.floor((gdn+lp)/365) - 400;
+    gdn   -= 365*y + lp;
+    var ml = [31,(y%4==0&&(y%100!=0||y%400==0))?29:28,31,30,31,30,31,31,30,31,30,31];
+    var i = 0;
+    for (; i < 12; i++) {
+        if (gdn <= ml[i]) break;
+        gdn -= ml[i];
+    }
+    return (y+1)+'-'+String(i+1).padStart(2,'0')+'-'+String(gdn).padStart(2,'0');
+}
+
+function syncGregorian(jalaliStr) {
+    var greg = document.getElementById('delivery_date_gregorian');
+    if (!greg) return;
+    if (!jalaliStr) { greg.value = ''; return; }
+    var p = jalaliStr.split('/');
+    if (p.length === 3 && p[0].length >= 4) {
+        greg.value = jalaliToGregorian(p[0], p[1], p[2]);
+    }
+}
+
+// ══════════════════════════════════════════════════════════
+// راه‌اندازی JalaliDatepicker
+// ══════════════════════════════════════════════════════════
+jalaliDatepicker.startWatch({
+    selector   : 'input[data-jdp]',
+    persianDigits: false,
+    showTodayBtn : true,
+    showEmptyBtn : true,
+    minDate    : 'today',        // تحویل نباید در گذشته باشد
+});
+
+// sync هنگام انتخاب تاریخ از picker
+document.addEventListener('jdp:change', function(e) {
+    if (e.target && e.target.id === 'delivery_date_jalali') {
+        syncGregorian(e.target.value);
+    }
+});
+
+// sync هنگام تایپ مستقیم
+var jalInp = document.getElementById('delivery_date_jalali');
+if (jalInp) {
+    jalInp.addEventListener('change', function() { syncGregorian(this.value); });
+    // مقداردهی اولیه (حالت ویرایش)
+    if (jalInp.value) syncGregorian(jalInp.value);
+}
+
+// ══════════════════════════════════════════════════════════
+// محاسبه مبلغ کل
+// ══════════════════════════════════════════════════════════
+function calcTotal() {
+    var qty   = parseFloat(document.getElementById('qtyKg').value)    || 0;
+    var price = parseFloat(document.getElementById('unitPrice').value) || 0;
+    document.getElementById('qtyDisplay').value = qty ? qty.toLocaleString('fa-IR') : '';
+    if (qty > 0 && price > 0)
+        document.getElementById('totalPrice').value = Math.round(qty * price);
+}
+
+// ══════════════════════════════════════════════════════════
+// نمایش رنگ شید
+// ══════════════════════════════════════════════════════════
+document.getElementById('shadeSelect').addEventListener('change', function() {
+    var opt = this.selectedOptions[0];
+    var hex = opt && opt.dataset && opt.dataset.hex;
+    var preview = document.getElementById('colorPreview');
+    if (hex && hex.startsWith('#')) {
+        document.getElementById('colorDot').style.background = hex;
+        document.getElementById('colorName').textContent = opt.textContent.trim();
+        preview.classList.remove('d-none');
+    } else {
+        preview.classList.add('d-none');
+    }
+});
+
+// ══════════════════════════════════════════════════════════
+// دکمه‌های اولویت
+// ══════════════════════════════════════════════════════════
+document.querySelectorAll('.priority-btn').forEach(function(btn) {
+    var radio = btn.querySelector('input[type=radio]');
+    if (radio && radio.checked) btn.classList.add('active');
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.priority-btn').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+    });
+});
+
+// ══════════════════════════════════════════════════════════
+// جلوگیری از دابل‌کلیک submit
+// ══════════════════════════════════════════════════════════
+document.getElementById('orderForm').addEventListener('submit', function() {
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>در حال ذخیره...';
+});
+
+// init
+calcTotal();
+</script>
+{% endblock %}

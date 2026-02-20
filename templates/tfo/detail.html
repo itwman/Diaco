@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load jalali_tags %}
+
+{% block title %}{{ page_title }} | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title"><h4 class="mb-0">{{ page_title }}</h4></div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item">{{ breadcrumb_parent }}</li>
+                    <li class="breadcrumb-item"><a href="{% url 'tfo:list' %}">لیست</a></li>
+                    <li class="breadcrumb-item active">{{ prod.batch_number }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-8">
+        {# هدر #}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h4 class="mb-1 font-monospace" style="color:#7c3aed;">{{ prod.batch_number }}</h4>
+                        <div class="text-muted f-s-13">
+                            <i class="ti ti-calendar me-1"></i>{{ prod.production_date|to_jalali }}
+                            &nbsp;|&nbsp;<i class="ti ti-device-desktop me-1"></i>{{ prod.machine.code }}
+                            &nbsp;|&nbsp;<i class="ti ti-user me-1"></i>{{ prod.operator.get_full_name }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        {% if prod.status == 'in_progress' %}
+                        <span class="badge bg-warning f-s-13 px-3 py-2">در جریان</span>
+                        {% elif prod.status == 'completed' %}
+                        <span class="badge bg-success f-s-13 px-3 py-2">تکمیل ✓</span>
+                        {% elif prod.status == 'quality_hold' %}
+                        <span class="badge bg-danger f-s-13 px-3 py-2">توقف کیفی</span>
+                        {% else %}
+                        <span class="badge bg-secondary f-s-13 px-3 py-2">{{ prod.get_status_display }}</span>
+                        {% endif %}
+                        <a href="{% url 'tfo:edit' prod.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="ti ti-pencil me-1"></i>ویرایش
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# جدول جزئیات #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">جزئیات بچ</h6></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <tbody>
+                        <tr>
+                            <th class="bg-light" style="width:35%">بچ بوبین‌پیچی ورودی</th>
+                            <td>
+                                {% if prod.winding_production %}
+                                <a href="{% url 'winding:detail' prod.winding_production.pk %}" class="font-monospace text-decoration-none">
+                                    {{ prod.winding_production.batch_number }}
+                                </a>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <th class="bg-light">سفارش</th>
+                            <td>{% if prod.order %}{{ prod.order.order_number }} — {{ prod.order.customer.name }}{% else %}—{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">تعداد لا</th>
+                            <td><span class="badge bg-light-secondary text-secondary f-s-14">{{ prod.ply_count }} لا</span></td>
+                            <th class="bg-light">جهت تاب</th>
+                            <td>
+                                {% if prod.twist_direction == 'S' %}
+                                <span class="badge bg-info">S — چپ‌تاب</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Z — راست‌تاب</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">تاب (TPM)</th>
+                            <td class="f-w-700 f-s-16" style="color:#7c3aed;">{{ prod.twist_tpm }}</td>
+                            <th class="bg-light">سرعت دوک (RPM)</th>
+                            <td>{{ prod.spindle_speed_rpm|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">تانسیون (g)</th>
+                            <td>{{ prod.tension_weight_g|default:"—" }}</td>
+                            <th class="bg-light">کنترل بالون</th>
+                            <td>{% if prod.balloon_control %}<span class="badge bg-success">فعال</span>{% else %}<span class="badge bg-secondary">غیرفعال</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">نمره ورودی (Ne)</th>
+                            <td>{{ prod.input_yarn_count_ne|default:"—" }}</td>
+                            <th class="bg-light">نمره خروجی (Ne)</th>
+                            <td>{{ prod.output_yarn_count_ne|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">وزن ورودی</th>
+                            <td>{% if prod.input_weight_kg %}{{ prod.input_weight_kg }} kg{% else %}—{% endif %}</td>
+                            <th class="bg-light">وزن خروجی</th>
+                            <td class="f-w-700 text-success">{% if prod.output_weight_kg %}{{ prod.output_weight_kg }} kg{% else %}—{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">ضایعات</th>
+                            <td class="text-warning">{% if prod.waste_weight_kg %}{{ prod.waste_weight_kg }} kg{% else %}—{% endif %}</td>
+                            <th class="bg-light">تعداد پارگی (AI)</th>
+                            <td>{{ prod.breakage_count }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# بچ‌های هیت‌ست مرتبط #}
+        {% if heatset_batches %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="ti ti-flame me-2 text-danger"></i>بچ‌های هیت‌ست مرتبط</h6>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead><tr><th>شماره بچ</th><th>ماشین</th><th>دما</th><th>نتیجه</th><th>وضعیت</th></tr></thead>
+                    <tbody>
+                        {% for hs in heatset_batches %}
+                        <tr>
+                            <td><a href="{% url 'heatset:detail' hs.pk %}" class="font-monospace text-primary">{{ hs.batch_number }}</a></td>
+                            <td>{{ hs.machine.code }}</td>
+                            <td>{{ hs.temperature_c }}°C</td>
+                            <td>
+                                {% if hs.quality_result == 'pass' %}<span class="badge bg-success">قبول</span>
+                                {% elif hs.quality_result == 'fail' %}<span class="badge bg-danger">رد</span>
+                                {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+                            </td>
+                            <td><span class="badge bg-light-secondary text-secondary f-s-11">{{ hs.get_status_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ستون راست #}
+    <div class="col-xl-4">
+        <div class="card mb-3">
+            <div class="card-header" style="background:rgba(139,92,246,.1);">
+                <h6 class="mb-0" style="color:#7c3aed;">شاخص‌های کیفیت</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="f-s-11 text-muted">پارگی (AI)</div>
+                        <div class="f-w-700 f-s-24 {% if prod.breakage_count > 10 %}text-danger{% elif prod.breakage_count > 5 %}text-warning{% else %}text-success{% endif %}">
+                            {{ prod.breakage_count }}
+                        </div>
+                        <div class="f-s-11 text-muted">بار</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="f-s-11 text-muted">راندمان</div>
+                        <div class="f-w-700 f-s-24 {% if prod.efficiency_pct >= 90 %}text-success{% elif prod.efficiency_pct >= 75 %}text-warning{% else %}text-danger{% endif %}">
+                            {% if prod.efficiency_pct %}{{ prod.efficiency_pct|floatformat:0 }}%{% else %}—{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# تغییر وضعیت #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">تغییر وضعیت</h6></div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if prod.status == 'in_progress' %}
+                    <button class="btn btn-success" onclick="changeStatus('completed')">
+                        <i class="ti ti-check me-2"></i>تکمیل شده
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="changeStatus('quality_hold')">
+                        <i class="ti ti-alert-triangle me-2"></i>توقف کیفی
+                    </button>
+                    {% elif prod.status == 'quality_hold' %}
+                    <button class="btn btn-primary" onclick="changeStatus('in_progress')" style="background:#7c3aed;border-color:#7c3aed;">
+                        <i class="ti ti-play me-2"></i>ادامه تولید
+                    </button>
+                    {% elif prod.status == 'completed' %}
+                    <div class="alert alert-success py-2 mb-0 f-s-13"><i class="ti ti-check-circle me-2"></i>بچ تکمیل شده</div>
+                    {% endif %}
+                    {% if prod.status != 'cancelled' and prod.status != 'completed' %}
+                    <button class="btn btn-outline-secondary btn-sm" onclick="changeStatus('cancelled')">
+                        <i class="ti ti-x me-2"></i>لغو
+                    </button>
+                    {% endif %}
+                </div>
+                <div id="statusMsg" class="mt-2"></div>
+            </div>
+        </div>
+
+        {% if prod.notes %}
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">یادداشت</h6></div>
+            <div class="card-body text-muted f-s-13">{{ prod.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function changeStatus(s) {
+    const r = await fetch('{% url "tfo:status" prod.pk %}', {
+        method: 'POST',
+        headers: {'X-CSRFToken':'{{ csrf_token }}','Content-Type':'application/x-www-form-urlencoded'},
+        body: `status=${s}`,
+    });
+    const d = await r.json();
+    if (d.ok) { setTimeout(() => location.reload(), 700); }
+    else { document.getElementById('statusMsg').innerHTML = `<div class="alert alert-danger py-1 f-s-12">${d.error}</div>`; }
+}
+</script>
+{% endblock %}

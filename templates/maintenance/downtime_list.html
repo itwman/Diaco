@@ -1,0 +1,38 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block table_headers %}
+<th>#</th>
+<th>ماشین</th>
+<th>دلیل</th>
+<th>جزئیات</th>
+<th>مدت (دقیقه)</th>
+<th>تولید از دست رفته</th>
+<th>شیفت</th>
+<th>شروع</th>
+{% endblock %}
+
+{% block table_body %}
+{% for d in object_list %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td class="f-w-600">{{ d.machine.code }}</td>
+    <td>
+        {% if d.reason_category == 'mechanical' %}
+        <span class="badge bg-danger">{{ d.get_reason_category_display }}</span>
+        {% elif d.reason_category == 'electrical' %}
+        <span class="badge bg-warning">{{ d.get_reason_category_display }}</span>
+        {% elif d.reason_category == 'planned' %}
+        <span class="badge bg-info">{{ d.get_reason_category_display }}</span>
+        {% else %}
+        <span class="badge bg-secondary">{{ d.get_reason_category_display }}</span>
+        {% endif %}
+    </td>
+    <td>{{ d.reason_detail|truncatechars:50 }}</td>
+    <td class="f-w-600">{{ d.duration_min|default:"-" }}</td>
+    <td>{% if d.production_loss %}{{ d.production_loss }} kg{% else %}-{% endif %}</td>
+    <td>{{ d.shift }}</td>
+    <td>{{ d.start_time|to_jalali_dt }}</td>
+</tr>
+{% endfor %}
+{% endblock %}

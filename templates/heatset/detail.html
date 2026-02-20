@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+{% load static %}
+{% load jalali_tags %}
+
+{% block title %}{{ page_title }} | دیاکو MES{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'vendor/apexcharts/apexcharts.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title"><h4 class="mb-0">{{ page_title }}</h4></div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item">{{ breadcrumb_parent }}</li>
+                    <li class="breadcrumb-item"><a href="{% url 'heatset:list' %}">لیست</a></li>
+                    <li class="breadcrumb-item active">{{ batch.batch_number }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+
+    {# ── ستون چپ ────────────────────────────────────────────── #}
+    <div class="col-xl-8">
+
+        {# هدر بچ #}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h4 class="mb-1 font-monospace text-danger">{{ batch.batch_number }}</h4>
+                        <div class="text-muted f-s-13">
+                            <i class="ti ti-calendar me-1"></i>{{ batch.production_date|to_jalali }}
+                            &nbsp;|&nbsp;<i class="ti ti-device-desktop me-1"></i>{{ batch.machine.code }}
+                            &nbsp;|&nbsp;<span class="text-danger f-w-600">{{ batch.temperature_c }}°C</span>
+                            &nbsp;|&nbsp;<i class="ti ti-user me-1"></i>{{ batch.operator.get_full_name }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        {% if batch.status == 'loading' %}
+                        <span class="badge bg-secondary f-s-13 px-3 py-2">بارگذاری</span>
+                        {% elif batch.status == 'processing' %}
+                        <span class="badge bg-danger f-s-13 px-3 py-2">در فرآیند 🔥</span>
+                        {% elif batch.status == 'cooling' %}
+                        <span class="badge bg-info f-s-13 px-3 py-2">سردشدن ❄️</span>
+                        {% elif batch.status == 'completed' %}
+                        <span class="badge bg-success f-s-13 px-3 py-2">تکمیل ✓</span>
+                        {% elif batch.status == 'failed' %}
+                        <span class="badge bg-danger f-s-13 px-3 py-2">ناموفق ✗</span>
+                        {% endif %}
+                        <a href="{% url 'heatset:edit' batch.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="ti ti-pencil me-1"></i>ویرایش
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# جدول جزئیات #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">پارامترهای فرآیند</h6></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <tbody>
+                        <tr>
+                            <th class="bg-light" style="width:35%">نوع دستگاه</th>
+                            <td>{{ batch.get_machine_type_hs_display }}</td>
+                            <th class="bg-light">نوع الیاف</th>
+                            <td>{{ batch.get_fiber_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">نوع چرخه</th>
+                            <td>{{ batch.get_cycle_type_display }}</td>
+                            <th class="bg-light">دمای تثبیت</th>
+                            <td class="f-w-700 text-danger f-s-16">{{ batch.temperature_c }}°C</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">فشار بخار</th>
+                            <td>{% if batch.steam_pressure_bar %}{{ batch.steam_pressure_bar }} bar{% else %}—{% endif %}</td>
+                            <th class="bg-light">سطح خلأ</th>
+                            <td>{% if batch.vacuum_level_mbar %}{{ batch.vacuum_level_mbar }} mbar{% else %}—{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">بچ TFO ورودی</th>
+                            <td colspan="3">
+                                {% if batch.tfo_production %}
+                                <a href="{% url 'tfo:detail' batch.tfo_production.pk %}" class="font-monospace text-decoration-none">
+                                    {{ batch.tfo_production.batch_number }}
+                                </a>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="bg-light">وزن بچ</th>
+                            <td class="f-w-700 text-success">{{ batch.batch_weight_kg }} kg</td>
+                            <th class="bg-light">تعداد بوبین</th>
+                            <td>{{ batch.packages_count|default:"—" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# زمان‌بندی چرخه #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-clock me-2"></i>زمان‌بندی چرخه</h6></div>
+            <div class="card-body">
+                <div class="row g-2 text-center">
+                    {% with steps="پیش‌گرم|pre_heat_min,خلأ|vacuum_time_min,بخار|steam_time_min,نگه‌داری|dwell_time_min,سردشدن|cooldown_min" %}
+                    {% for step in steps|split:"," %}{% endfor %}
+                    {% endwith %}
+                    <div class="col">
+                        <div class="border rounded p-2">
+                            <div class="f-s-11 text-muted">پیش‌گرم</div>
+                            <div class="f-w-700">{% if batch.pre_heat_min %}{{ batch.pre_heat_min }} دق{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="col d-flex align-items-center justify-content-center text-muted">→</div>
+                    <div class="col">
+                        <div class="border rounded p-2">
+                            <div class="f-s-11 text-muted">خلأ</div>
+                            <div class="f-w-700">{% if batch.vacuum_time_min %}{{ batch.vacuum_time_min }} دق{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="col d-flex align-items-center justify-content-center text-muted">→</div>
+                    <div class="col">
+                        <div class="border rounded p-2 bg-light-danger">
+                            <div class="f-s-11 text-danger">بخار</div>
+                            <div class="f-w-700 text-danger">{% if batch.steam_time_min %}{{ batch.steam_time_min }} دق{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="col d-flex align-items-center justify-content-center text-muted">→</div>
+                    <div class="col">
+                        <div class="border rounded p-2 bg-light-warning">
+                            <div class="f-s-11 text-warning">نگه‌داری</div>
+                            <div class="f-w-700 text-warning">{% if batch.dwell_time_min %}{{ batch.dwell_time_min }} دق{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="col d-flex align-items-center justify-content-center text-muted">→</div>
+                    <div class="col">
+                        <div class="border rounded p-2 bg-light-info">
+                            <div class="f-s-11 text-info">سردشدن</div>
+                            <div class="f-w-700 text-info">{% if batch.cooldown_min %}{{ batch.cooldown_min }} دق{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                </div>
+                {% if batch.duration_min %}
+                <div class="text-center mt-2 text-muted f-s-13">مجموع: <span class="f-w-700">{{ batch.duration_min }} دقیقه</span></div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# نمودار چرخه دما/فشار #}
+        {% if log_count > 0 %}
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0"><i class="ti ti-chart-line me-2 text-danger"></i>نمودار چرخه دما / فشار (AI-Ready)</h6>
+                <span class="badge bg-light-secondary text-secondary">{{ log_count }} نقطه لاگ</span>
+            </div>
+            <div class="card-body">
+                <div id="cycleChart"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# جدول لاگ‌ها #}
+        {% if cycle_logs %}
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0">لاگ چرخه</h6>
+                {% if batch.status in 'loading,processing,cooling' %}
+                <button class="btn btn-danger btn-sm" onclick="document.getElementById('logForm').classList.toggle('d-none')">
+                    <i class="ti ti-plus me-1"></i>ثبت لاگ
+                </button>
+                {% endif %}
+            </div>
+
+            {# فرم ثبت لاگ لحظه‌ای #}
+            <div id="logForm" class="d-none card-body border-bottom bg-light-danger">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label f-s-12">دقیقه از شروع</label>
+                        <input type="number" id="logElapsed" class="form-control form-control-sm" step="0.5" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label f-s-12">دما (°C)</label>
+                        <input type="number" id="logTemp" class="form-control form-control-sm" step="0.1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label f-s-12">فشار (bar)</label>
+                        <input type="number" id="logPressure" class="form-control form-control-sm" step="0.001">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label f-s-12">رطوبت (%)</label>
+                        <input type="number" id="logHumidity" class="form-control form-control-sm" step="0.1">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label f-s-12">مرحله</label>
+                        <select id="logPhase" class="form-select form-select-sm">
+                            {% for val, label in phase_choices %}
+                            <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-danger btn-sm w-100" onclick="submitLog()">ثبت</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height:250px;overflow-y:auto;">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr><th>دقیقه</th><th>دما (°C)</th><th>فشار (bar)</th><th>رطوبت (%)</th><th>مرحله</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for log in cycle_logs %}
+                            <tr>
+                                <td>{{ log.elapsed_min|default:"—" }}</td>
+                                <td class="{% if log.temperature_c %}text-danger f-w-600{% endif %}">{{ log.temperature_c|default:"—" }}</td>
+                                <td>{{ log.pressure_bar|default:"—" }}</td>
+                                <td>{{ log.humidity_pct|default:"—" }}</td>
+                                <td><span class="badge bg-light-secondary text-secondary f-s-11">{{ log.get_phase_display }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        {# نشان ثبت اولین لاگ #}
+        {% if batch.status in 'loading,processing,cooling' %}
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0">لاگ چرخه دما/فشار</h6>
+                <button class="btn btn-danger btn-sm" onclick="document.getElementById('logFormEmpty').classList.toggle('d-none')">
+                    <i class="ti ti-plus me-1"></i>ثبت لاگ
+                </button>
+            </div>
+            <div id="logFormEmpty" class="d-none card-body border-bottom bg-light-danger">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2"><label class="form-label f-s-12">دقیقه</label><input type="number" id="logElapsed2" class="form-control form-control-sm" step="0.5" min="0"></div>
+                    <div class="col-md-2"><label class="form-label f-s-12">دما</label><input type="number" id="logTemp2" class="form-control form-control-sm" step="0.1"></div>
+                    <div class="col-md-2"><label class="form-label f-s-12">فشار</label><input type="number" id="logPressure2" class="form-control form-control-sm" step="0.001"></div>
+                    <div class="col-md-2"><label class="form-label f-s-12">رطوبت</label><input type="number" id="logHumidity2" class="form-control form-control-sm" step="0.1"></div>
+                    <div class="col-md-2"><label class="form-label f-s-12">مرحله</label>
+                        <select id="logPhase2" class="form-select form-select-sm">
+                            {% for val, label in phase_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2"><button class="btn btn-danger btn-sm w-100" onclick="submitLog2()">ثبت</button></div>
+                </div>
+            </div>
+            <div class="card-body text-center text-muted py-4">
+                <i class="ti ti-chart-line-off f-s-30 d-block mb-2"></i>
+                هنوز لاگی ثبت نشده
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    {# ── ستون راست ──────────────────────────────────────────── #}
+    <div class="col-xl-4">
+
+        {# نتایج کیفی #}
+        <div class="card mb-3">
+            <div class="card-header bg-light-success">
+                <h6 class="mb-0 text-success"><i class="ti ti-star me-2"></i>نتایج کیفی</h6>
+            </div>
+            <div class="card-body text-center">
+                {% if batch.quality_result %}
+                <div class="mb-3">
+                    {% if batch.quality_result == 'pass' %}
+                    <div class="h-60 w-60 d-flex-center b-r-15 bg-success m-auto mb-2">
+                        <i class="ti ti-check f-s-30 text-white"></i>
+                    </div>
+                    <div class="f-w-700 f-s-18 text-success">قبول ✓</div>
+                    {% elif batch.quality_result == 'fail' %}
+                    <div class="h-60 w-60 d-flex-center b-r-15 bg-danger m-auto mb-2">
+                        <i class="ti ti-x f-s-30 text-white"></i>
+                    </div>
+                    <div class="f-w-700 f-s-18 text-danger">رد ✗</div>
+                    {% else %}
+                    <div class="h-60 w-60 d-flex-center b-r-15 bg-warning m-auto mb-2">
+                        <i class="ti ti-alert-triangle f-s-30 text-white"></i>
+                    </div>
+                    <div class="f-w-700 f-s-18 text-warning">مشروط</div>
+                    {% endif %}
+                </div>
+                {% if batch.shrinkage_pct %}
+                <div class="text-muted f-s-13">آنکاژ: <span class="f-w-600 text-dark">{{ batch.shrinkage_pct }}%</span></div>
+                {% endif %}
+                {% if batch.twist_stability %}
+                <div class="text-muted f-s-13 mt-1">پایداری تاب: <span class="f-w-600 text-dark">{{ batch.get_twist_stability_display }}</span></div>
+                {% endif %}
+                {% else %}
+                <div class="text-muted py-2">
+                    <i class="ti ti-clock f-s-24 d-block mb-1"></i>
+                    در انتظار نتیجه
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# تغییر وضعیت #}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">تغییر وضعیت</h6></div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if batch.status == 'loading' %}
+                    <button class="btn btn-danger" onclick="changeStatus('processing')">
+                        <i class="ti ti-flame me-2"></i>شروع فرآیند
+                    </button>
+                    {% elif batch.status == 'processing' %}
+                    <button class="btn btn-info" onclick="changeStatus('cooling')">
+                        <i class="ti ti-snowflake me-2"></i>شروع سردشدن
+                    </button>
+                    {% elif batch.status == 'cooling' %}
+                    <div class="mb-2">
+                        <select id="qualitySelect" class="form-select form-select-sm mb-2">
+                            <option value="">نتیجه کیفی (اختیاری)</option>
+                            {% for val, label in quality_choices %}
+                            <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="changeStatusWithQuality('completed')">
+                        <i class="ti ti-check me-2"></i>تکمیل شده
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="changeStatusWithQuality('failed')">
+                        <i class="ti ti-x me-2"></i>ناموفق
+                    </button>
+                    {% elif batch.status in 'completed,failed' %}
+                    <div class="alert alert-{% if batch.status == 'completed' %}success{% else %}danger{% endif %} py-2 mb-0 f-s-13">
+                        <i class="ti ti-{% if batch.status == 'completed' %}check{% else %}x{% endif %}-circle me-2"></i>
+                        {{ batch.get_status_display }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div id="statusMsg" class="mt-2"></div>
+            </div>
+        </div>
+
+        {% if batch.notes %}
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0">یادداشت</h6></div>
+            <div class="card-body text-muted f-s-13">{{ batch.notes }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/apexcharts/apexcharts.min.js' %}"></script>
+<script>
+const CSRF = '{{ csrf_token }}';
+const BATCH_PK = {{ batch.pk }};
+
+// ── تغییر وضعیت ──────────────────────────────────────────
+async function changeStatus(s, extra={}) {
+    let body = `status=${s}`;
+    for (const [k,v] of Object.entries(extra)) { if(v) body += `&${k}=${v}`; }
+    const r = await fetch(`/heatset/${BATCH_PK}/status/`, {
+        method:'POST', headers:{'X-CSRFToken':CSRF,'Content-Type':'application/x-www-form-urlencoded'}, body
+    });
+    const d = await r.json();
+    if (d.ok) { setTimeout(()=>location.reload(), 700); }
+    else { document.getElementById('statusMsg').innerHTML=`<div class="alert alert-danger py-1 f-s-12">${d.error}</div>`; }
+}
+
+function changeStatusWithQuality(s) {
+    const q = document.getElementById('qualitySelect')?.value;
+    changeStatus(s, {quality_result: q});
+}
+
+// ── ثبت لاگ ─────────────────────────────────────────────
+async function submitLog() {
+    const body = new URLSearchParams({
+        elapsed_min: document.getElementById('logElapsed').value,
+        temperature_c: document.getElementById('logTemp').value,
+        pressure_bar: document.getElementById('logPressure').value,
+        humidity_pct: document.getElementById('logHumidity').value,
+        phase: document.getElementById('logPhase').value,
+    });
+    const r = await fetch(`/heatset/${BATCH_PK}/log/add/`, {
+        method:'POST', headers:{'X-CSRFToken':CSRF,'Content-Type':'application/x-www-form-urlencoded'}, body
+    });
+    const d = await r.json();
+    if (d.ok) { location.reload(); }
+}
+
+async function submitLog2() {
+    const body = new URLSearchParams({
+        elapsed_min: document.getElementById('logElapsed2').value,
+        temperature_c: document.getElementById('logTemp2').value,
+        pressure_bar: document.getElementById('logPressure2').value,
+        humidity_pct: document.getElementById('logHumidity2').value,
+        phase: document.getElementById('logPhase2').value,
+    });
+    const r = await fetch(`/heatset/${BATCH_PK}/log/add/`, {
+        method:'POST', headers:{'X-CSRFToken':CSRF,'Content-Type':'application/x-www-form-urlencoded'}, body
+    });
+    const d = await r.json();
+    if (d.ok) { location.reload(); }
+}
+
+// ── نمودار ApexCharts ────────────────────────────────────
+{% if log_count > 0 %}
+fetch(`/heatset/${BATCH_PK}/log/data/`)
+    .then(r=>r.json())
+    .then(data => {
+        if (!data.elapsed || data.elapsed.length === 0) return;
+        const opts = {
+            chart: { type:'line', height:280, toolbar:{show:false}, fontFamily:'Vazirmatn,sans-serif' },
+            series: [
+                { name:'دما (°C)', data: data.temperature.map((v,i)=>({x:data.elapsed[i],y:v})) },
+                { name:'فشار (bar×10)', data: data.pressure.map((v,i)=>({x:data.elapsed[i],y:v?v*10:null})) },
+            ],
+            colors: ['#ef4444','#3b82f6'],
+            stroke: { curve:'smooth', width:[2,2] },
+            xaxis: { type:'numeric', title:{text:'دقیقه از شروع'} },
+            yaxis: { title:{text:'دما °C / فشار (×۱۰)'} },
+            tooltip: { x:{formatter:v=>`${v} دق`} },
+            legend: { position:'top' },
+        };
+        new ApexCharts(document.getElementById('cycleChart'), opts).render();
+    });
+{% endif %}
+</script>
+{% endblock %}

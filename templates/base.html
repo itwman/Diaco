@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="سیستم مدیریت تولید دیاکو" name="description">
+    <link href="{% static 'images/logo/favicon.png' %}" rel="icon" type="image/x-icon">
+    <title>{% block title %}دیاکو MES{% endblock %}</title>
+
+    <!-- Animation -->
+    <link href="{% static 'vendor/animation/animate.min.css' %}" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="{% static 'fonts/vazir/Farsi-Digits/Vazirmatn-FD-font-face.css' %}" rel="stylesheet">
+    <!-- tabler icons -->
+    <link href="{% static 'vendor/tabler-icons/tabler-icons.css' %}" rel="stylesheet">
+    <!-- Bootstrap -->
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- simplebar -->
+    <link href="{% static 'vendor/simplebar/simplebar.css' %}" rel="stylesheet">
+    <!-- App css -->
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
+    <link href="{% static 'css/rtl.css' %}" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="rtl">
+    <div class="app-wrapper">
+
+        <!-- Loader -->
+        <div class="loader-wrapper">
+            <div class="loader_24"></div>
+        </div>
+
+        <!-- Sidebar -->
+        {% include "includes/sidebar.html" %}
+
+        <!-- App Content -->
+        <div class="app-content">
+            <div class="">
+
+                <!-- Header -->
+                {% include "includes/header.html" %}
+
+                <!-- Page Body -->
+                <div class="app-body">
+                    <div class="container-fluid">
+
+                        <!-- Breadcrumb -->
+                        {% block breadcrumb %}{% endblock %}
+
+                        <!-- Page Content -->
+                        {% block content %}{% endblock %}
+
+                    </div>
+                </div>
+
+                <!-- Tap to Top -->
+                <div class="tap-to-top">
+                    <span class="d-flex-center">
+                        <i class="ti ti-chevron-up"></i>
+                    </span>
+                </div>
+
+                <!-- Footer -->
+                {% include "includes/footer.html" %}
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Customizer -->
+    <div id="customizer"></div>
+
+    <!-- JS -->
+    <script src="{% static 'js/jquery-3.6.3.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/simplebar/simplebar.js' %}"></script>
+    <script src="{% static 'vendor/phosphor/phosphor.js' %}"></script>
+    <script src="{% static 'js/customizer.js' %}"></script>
+    <script src="{% static 'js/script.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

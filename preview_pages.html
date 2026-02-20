@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پیش‌نمایش صفحات ورود - دیاکو MES</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .preview-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .preview-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .preview-header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .preview-header p {
+            color: #666;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .preview-item {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .preview-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .preview-frame {
+            width: 100%;
+            height: 700px;
+            border: none;
+            background: white;
+        }
+        
+        .info-box {
+            background: #e8f4f8;
+            border-right: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            padding-right: 20px;
+            color: #555;
+        }
+        
+        .info-box li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="preview-header">
+            <h1>✨ بازطراحی صفحات ورود سیستم دیاکو MES</h1>
+            <p>طراحی جدید بر اساس قالب Kayo Admin با ظاهر مدرن و حرفه‌ای</p>
+        </div>
+        
+        <div class="info-box">
+            <h3>🎨 ویژگی‌های طراحی جدید:</h3>
+            <ul>
+                <li><strong>طراحی Two-Column Layout:</strong> بخش چپ برای تصاویر و برندینگ، بخش راست برای فرم ورود</li>
+                <li><strong>گرادیانت مدرن:</strong> ترکیب رنگ‌های بنفش (#667eea) و ارغوانی (#764ba2)</li>
+                <li><strong>انیمیشن‌های نرم:</strong> افکت‌های hover، float و fade-in برای تجربه کاربری بهتر</li>
+                <li><strong>آیکون‌های Tabler:</strong> استفاده از آیکون‌های مدرن و زیبا</li>
+                <li><strong>Responsive Design:</strong> سازگار با موبایل، تبلت و دسکتاپ</li>
+                <li><strong>فونت وزیرمتن:</strong> فونت فارسی خوانا و زیبا</li>
+            </ul>
+        </div>
+        
+        <div class="preview-grid">
+            <div class="preview-item">
+                <div class="preview-title">
+                    🔐 صفحه ورود (Login)
+                </div>
+                <iframe src="login_preview.html" class="preview-frame"></iframe>
+            </div>
+            
+            <div class="preview-item">
+                <div class="preview-title">
+                    🏭 انتخاب خط تولید (Production Line Selection)
+                </div>
+                <iframe src="select_line_preview.html" class="preview-frame"></iframe>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>📋 راهنمای تست:</h3>
+            <ul>
+                <li>برای مشاهده صفحه واقعی، سرور Django را اجرا کنید و به آدرس <code>http://127.0.0.1:8000/accounts/login/</code> بروید</li>
+                <li>برای صفحه انتخاب خط تولید به آدرس <code>http://127.0.0.1:8000/tablet/select-line/</code> بروید</li>
+                <li>در حالت موبایل، بخش سمت چپ (تصاویر) مخفی می‌شود</li>
+                <li>تمام فرم‌ها کاملاً کاربردی هستند و با Django یکپارچه شده‌اند</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

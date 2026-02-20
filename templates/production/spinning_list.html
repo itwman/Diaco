@@ -1,0 +1,14 @@
+{% extends "production/production_base_list.html" %}
+{% block extra_headers %}<th>نمره نخ</th><th>تاب</th><th>پارگی</th><th>راندمان</th>{% endblock %}
+{% block extra_cols %}
+<td>{{ item.yarn_count }}</td>
+<td>{{ item.twist_tpm }} {{ item.twist_direction }}</td>
+<td>{{ item.breakage_count }}</td>
+<td>
+    {% if item.efficiency_pct %}
+    <span class="{% if item.efficiency_pct >= 85 %}text-success{% elif item.efficiency_pct >= 70 %}text-warning{% else %}text-danger{% endif %} f-w-600">
+        {{ item.efficiency_pct }}%
+    </span>
+    {% else %}-{% endif %}
+</td>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block header_actions %}
+<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#dyeModal">
+    <i class="ti ti-plus me-1"></i> ثبت رنگ جدید
+</button>
+{% endblock %}
+
+{% block extra_before_table %}
+<div class="card-body border-bottom py-2">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+        <select name="type" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+            <option value="">همه انواع</option>
+            {% for v,l in type_choices %}<option value="{{ v }}" {% if type_filter == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+        <select name="status" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+            <option value="">همه وضعیت‌ها</option>
+            {% for v,l in status_choices %}<option value="{{ v }}" {% if status_filter == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+        {% if type_filter or status_filter %}
+        <a href="{% url 'inventory:dye_list' %}" class="btn btn-sm btn-outline-danger"><i class="ti ti-x"></i></a>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+<th>#</th>
+<th>نام</th>
+<th>کد</th>
+<th>نوع</th>
+<th>سازنده</th>
+<th>موجودی فعلی</th>
+<th>وضعیت</th>
+<th>انقضا</th>
+<th></th>
+{% endblock %}
+
+{% block table_body %}
+{% for item in object_list %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td class="f-w-600">{{ item.name }}</td>
+    <td><code>{{ item.code }}</code></td>
+    <td>{{ item.get_dye_type_display }}</td>
+    <td>{{ item.manufacturer|default:"-" }}</td>
+    <td>{{ item.current_weight }} {{ item.unit }}</td>
+    <td>
+        {% if item.status == 'available' %}
+        <span class="badge bg-light-success text-success">{{ item.get_status_display }}</span>
+        {% elif item.status == 'expired' %}
+        <span class="badge bg-light-danger text-danger">{{ item.get_status_display }}</span>
+        {% else %}
+        <span class="badge bg-light-secondary text-secondary">{{ item.get_status_display }}</span>
+        {% endif %}
+    </td>
+    <td>{{ item.expiry_date|to_jalali|default:"-" }}</td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                onclick="editDye({{ item.id }},'{{ item.name|escapejs }}','{{ item.code|escapejs }}','{{ item.dye_type }}','{{ item.manufacturer|escapejs }}','{{ item.batch_number|escapejs }}','{{ item.current_weight }}','{{ item.unit }}','{{ item.status }}','{{ item.notes|escapejs }}')">
+            <i class="ti ti-edit f-s-14"></i>
+        </button>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="9" class="text-center text-muted py-4">
+    <i class="ti ti-database-off f-s-24 d-block mb-2"></i>رنگی ثبت نشده
+</td></tr>
+{% endfor %}
+{% endblock %}
+
+{% block extra_content %}
+<!-- Modal افزودن/ویرایش رنگ -->
+<div class="modal fade" id="dyeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dyeModalTitle">ثبت رنگ جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="dyeForm">
+                {% csrf_token %}
+                <input type="hidden" id="dyeId" value="">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">نام رنگ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="dyeName" required placeholder="مثال: قرمز دیسپرس FF">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">کد <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="dyeCode" required placeholder="مثال: DY-001" dir="ltr">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">نوع رنگ <span class="text-danger">*</span></label>
+                            <select class="form-select" id="dyeType">
+                                {% for v,l in type_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">سازنده</label>
+                            <input type="text" class="form-control" id="dyeMfr" placeholder="نام سازنده">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شماره بچ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="dyeBatch" required dir="ltr">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">وضعیت</label>
+                            <select class="form-select" id="dyeStatus">
+                                {% for v,l in status_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">مقدار اولیه <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="dyeInitial" required min="0" step="0.001">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">مقدار فعلی</label>
+                            <input type="number" class="form-control" id="dyeCurrent" min="0" step="0.001" placeholder="پیش‌فرض: مقدار اولیه">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">واحد</label>
+                            <select class="form-select" id="dyeUnit">
+                                <option value="kg">کیلوگرم</option>
+                                <option value="g">گرم</option>
+                                <option value="liter">لیتر</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">تاریخ ورود</label>
+                            <input type="text" class="form-control" id="dyeReceived" data-jdp autocomplete="off" placeholder="مثال: ۱۴۰۵/۰۱/۰۱">
+                            <input type="hidden" id="dyeReceivedG">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">تاریخ انقضا</label>
+                            <input type="text" class="form-control" id="dyeExpiry" data-jdp autocomplete="off" placeholder="اختیاری">
+                            <input type="hidden" id="dyeExpiryG">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">قیمت واحد (ریال)</label>
+                            <input type="number" class="form-control" id="dyePrice" min="0" step="1000">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">یادداشت</label>
+                            <textarea class="form-control" id="dyeNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary" id="dyeSubmitBtn">
+                        <i class="ti ti-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/static/vendor/JalaliDatePicker/jalalidatepicker.min.js"></script>
+<link rel="stylesheet" href="/static/vendor/JalaliDatePicker/jalalidatepicker.min.css">
+<script>
+// تبدیل شمسی به میلادی
+function j2g(jy, jm, jd) {
+    jy=parseInt(jy); jm=parseInt(jm); jd=parseInt(jd);
+    var jy1=jy+979, ml=[0,31,59,90,120,151,181,212,243,273,304,334];
+    var jdn=365*jy1+Math.floor((jy1+23)/33)*8+Math.floor(((jy1%33)+3)/4)+78+jd+ml[jm-1];
+    if(jm>6)jdn++;
+    var gdn=jdn-1948440+36525;
+    gdn-=Math.floor(gdn/36524.25)*100-Math.floor(gdn/146097)*400;
+    var lp=Math.floor((gdn-1)/1460)-Math.floor((gdn-1)/36524)+Math.floor((gdn-1)/146096);
+    var y=Math.floor((gdn+lp)/365)-400; gdn-=365*y+lp;
+    var ml2=[31,(y%4==0&&(y%100!=0||y%400==0))?29:28,31,30,31,30,31,31,30,31,30,31],i=0,s=0;
+    for(;i<12;i++){s+=ml2[i];if(gdn<=s){gdn-=s-ml2[i];break;}}
+    return (y+1)+'-'+String(i+1).padStart(2,'0')+'-'+String(gdn).padStart(2,'0');
+}
+function bindJdp(inputId, hiddenId) {
+    var inp = document.getElementById(inputId);
+    var hid = document.getElementById(hiddenId);
+    if (!inp || !hid) return;
+    function sync() {
+        var p = inp.value.split('/');
+        if (p.length === 3 && p[0].length >= 4) {
+            try { hid.value = j2g(p[0],p[1],p[2]); } catch(e){ hid.value=''; }
+        } else { hid.value = ''; }
+    }
+    inp.addEventListener('jdp:change', sync);
+    inp.addEventListener('input', sync);
+}
+jalaliDatepicker.startWatch({selector:'input[data-jdp]', persianDigits:false, showTodayBtn:true, showEmptyBtn:true});
+bindJdp('dyeReceived','dyeReceivedG');
+bindJdp('dyeExpiry','dyeExpiryG');
+
+document.getElementById('dyeModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('dyeId').value = '';
+    document.getElementById('dyeModalTitle').textContent = 'ثبت رنگ جدید';
+    document.getElementById('dyeForm').reset();
+});
+
+function editDye(id, name, code, type, mfr, batch, current, unit, status, notes) {
+    document.getElementById('dyeId').value = id;
+    document.getElementById('dyeModalTitle').textContent = 'ویرایش: ' + name;
+    document.getElementById('dyeName').value = name;
+    document.getElementById('dyeCode').value = code;
+    document.getElementById('dyeType').value = type;
+    document.getElementById('dyeMfr').value = mfr;
+    document.getElementById('dyeBatch').value = batch;
+    document.getElementById('dyeCurrent').value = current;
+    document.getElementById('dyeUnit').value = unit;
+    document.getElementById('dyeStatus').value = status;
+    document.getElementById('dyeNotes').value = notes;
+    new bootstrap.Modal(document.getElementById('dyeModal')).show();
+}
+
+document.getElementById('dyeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('dyeId').value;
+    const url = id ? `/inventory/dyes/${id}/edit/` : `/inventory/dyes/create/`;
+    const data = new FormData();
+    data.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    data.append('name',    document.getElementById('dyeName').value);
+    data.append('code',    document.getElementById('dyeCode').value);
+    data.append('type',    document.getElementById('dyeType').value);
+    data.append('mfr',     document.getElementById('dyeMfr').value);
+    data.append('batch',   document.getElementById('dyeBatch').value);
+    data.append('initial', document.getElementById('dyeInitial').value);
+    data.append('current', document.getElementById('dyeCurrent').value);
+    data.append('unit',    document.getElementById('dyeUnit').value);
+    data.append('received',document.getElementById('dyeReceivedG').value || document.getElementById('dyeReceived').value);
+    data.append('expiry',  document.getElementById('dyeExpiryG').value || document.getElementById('dyeExpiry').value);
+    data.append('price',   document.getElementById('dyePrice').value);
+    data.append('notes',   document.getElementById('dyeNotes').value);
+    data.append('status',  document.getElementById('dyeStatus').value);
+    const btn = document.getElementById('dyeSubmitBtn');
+    btn.disabled = true;
+    fetch(url, {method: 'POST', body: data})
+        .then(r => r.json())
+        .then(res => { if (res.ok) location.reload(); else { alert('خطا: ' + res.error); btn.disabled = false; } })
+        .catch(() => { btn.disabled = false; });
+});
+</script>
+{% endblock %}

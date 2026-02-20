@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+{% load jalali_tags static %}
+{% block title %}برنامه PM | دیاکو MES{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'vendor/JalaliDatePicker/jalalidatepicker.min.css' %}" rel="stylesheet">
+<style>
+/* z-index بالاتر از modal */
+.jdp-container { z-index: 99999 !important; }
+.jdp-overlay   { z-index: 99998 !important; }
+
+/* کارت فیلتر */
+.filter-card { background: linear-gradient(135deg,#f8f9ff 0%,#eef1ff 100%); border: 1px solid #dee5ff; }
+.filter-card .form-select, .filter-card .form-control { font-size:.85rem; }
+
+/* نوار وضعیت */
+.status-bar { height:4px; border-radius:2px; }
+
+/* badge دوره */
+.freq-badge { font-size:.72rem; letter-spacing:.3px; }
+
+/* ردیف عقب‌افتاده */
+tr.row-overdue { background: #fff5f5; }
+tr.row-overdue:hover { background: #ffe8e8 !important; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+  <div class="col-12">
+    <div class="page-header">
+      <div class="page-header-title">
+        <h4 class="mb-0"><i class="ti ti-calendar-check text-primary me-2"></i>برنامه‌های سرویس PM</h4>
+      </div>
+      <div class="page-header-breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+          <li class="breadcrumb-item">نگهداری</li>
+          <li class="breadcrumb-item active">برنامه PM</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── فیلترها ───────────────────────────────────────── -->
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card filter-card mb-0">
+      <div class="card-body py-2 px-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-auto">
+            <i class="ti ti-filter text-primary"></i>
+            <span class="fw-bold text-primary small ms-1">فیلتر</span>
+          </div>
+
+          <div class="col-md-2 col-sm-6">
+            <select class="form-select form-select-sm" id="filterMachine">
+              <option value="">همه ماشین‌ها</option>
+              {% for m in machines %}
+              <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2 col-sm-6">
+            <select class="form-select form-select-sm" id="filterFreq">
+              <option value="">همه دوره‌ها</option>
+              {% for val,lbl in frequency_choices %}
+              <option value="{{ val }}">{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2 col-sm-6">
+            <select class="form-select form-select-sm" id="filterType">
+              <option value="">همه انواع</option>
+              {% for val,lbl in type_choices %}
+              <option value="{{ val }}">{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-2 col-sm-6">
+            <select class="form-select form-select-sm" id="filterStatus">
+              <option value="">همه وضعیت‌ها</option>
+              <option value="overdue">⚠ عقب‌افتاده</option>
+              <option value="ok">✓ بروز</option>
+              <option value="inactive">غیرفعال</option>
+            </select>
+          </div>
+
+          <div class="col-md-2 col-sm-6">
+            <select class="form-select form-select-sm" id="filterPriority">
+              <option value="">همه اولویت‌ها</option>
+              {% for val,lbl in priority_choices %}
+              <option value="{{ val }}">{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-1 col-sm-4">
+            <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
+              <i class="ti ti-x"></i> پاک
+            </button>
+          </div>
+
+          <div class="col-auto ms-auto">
+            <span class="text-muted small" id="filterCount"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── جدول اصلی ─────────────────────────────────────── -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h5 class="mb-0">
+          <i class="ti ti-list-check me-1 text-primary"></i>
+          لیست برنامه‌های PM
+          <span class="badge bg-light-primary text-primary ms-1" id="totalBadge">{{ object_list|length }}</span>
+        </h5>
+        <button class="btn btn-primary btn-sm"
+                data-bs-toggle="modal" data-bs-target="#modalSchedule"
+                onclick="openCreate()">
+          <i class="ti ti-plus me-1"></i> برنامه جدید
+        </button>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle" id="pmTable">
+            <thead class="table-light">
+              <tr>
+                <th style="width:40px">#</th>
+                <th>ماشین</th>
+                <th>عنوان برنامه</th>
+                <th>نوع</th>
+                <th>دوره</th>
+                <th>اولویت</th>
+                <th>موعد بعدی</th>
+                <th>آخرین انجام</th>
+                <th>مسئول</th>
+                <th>وضعیت</th>
+                <th style="width:60px">عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="pmTbody">
+              {% for s in object_list %}
+              <tr class="pm-row{% if s.is_overdue %} row-overdue{% endif %}"
+                  data-machine="{{ s.machine.id }}"
+                  data-freq="{{ s.frequency }}"
+                  data-type="{{ s.maintenance_type }}"
+                  data-priority="{{ s.priority }}"
+                  data-status="{% if s.is_overdue %}overdue{% elif s.is_active %}ok{% else %}inactive{% endif %}">
+
+                <td class="text-muted">{{ forloop.counter }}</td>
+
+                <td>
+                  <span class="badge bg-light-secondary text-secondary fw-bold">{{ s.machine.code }}</span>
+                  <small class="d-block text-muted" style="font-size:.72rem">{{ s.machine.name }}</small>
+                </td>
+
+                <td class="fw-600">{{ s.title }}</td>
+
+                <td>
+                  {% if s.maintenance_type == 'preventive' %}
+                    <span class="badge bg-light-success text-success">{{ s.get_maintenance_type_display }}</span>
+                  {% elif s.maintenance_type == 'overhaul' %}
+                    <span class="badge bg-light-danger text-danger">{{ s.get_maintenance_type_display }}</span>
+                  {% else %}
+                    <span class="badge bg-light-info text-info">{{ s.get_maintenance_type_display }}</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  <span class="badge bg-light-secondary text-secondary freq-badge">
+                    {{ s.get_frequency_display }}
+                  </span>
+                  {% if s.frequency == 'custom' and s.custom_days %}
+                  <small class="text-muted">({{ s.custom_days }}ر)</small>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if s.priority == 'critical' %}<span class="badge bg-danger">{{ s.get_priority_display }}</span>
+                  {% elif s.priority == 'high' %}<span class="badge bg-warning text-dark">{{ s.get_priority_display }}</span>
+                  {% elif s.priority == 'medium' %}<span class="badge bg-info">{{ s.get_priority_display }}</span>
+                  {% else %}<span class="badge bg-secondary">{{ s.get_priority_display }}</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if s.is_overdue %}
+                  <span class="text-danger fw-bold">{{ s.next_due_at|to_jalali_dt }}</span>
+                  {% else %}
+                  {{ s.next_due_at|to_jalali_dt }}
+                  {% endif %}
+                </td>
+
+                <td class="text-muted">
+                  {% if s.last_done_at %}{{ s.last_done_at|to_jalali_dt }}{% else %}—{% endif %}
+                </td>
+
+                <td class="text-muted small">
+                  {% if s.assigned_to %}{{ s.assigned_to.get_full_name|default:s.assigned_to.username }}{% else %}—{% endif %}
+                </td>
+
+                <td>
+                  {% if s.is_overdue %}
+                    <span class="badge bg-danger">⚠ عقب‌افتاده</span>
+                  {% elif s.is_active %}
+                    <span class="badge bg-light-success text-success">بروز ✓</span>
+                  {% else %}
+                    <span class="badge bg-secondary">غیرفعال</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  <button class="btn btn-sm btn-light-primary" title="ویرایش"
+                    data-bs-toggle="modal" data-bs-target="#modalSchedule"
+                    onclick="openEdit(
+                      {{ s.id }},
+                      '{{ s.machine.id }}',
+                      '{{ s.title|escapejs }}',
+                      '{{ s.description|escapejs }}',
+                      '{{ s.maintenance_type }}',
+                      '{{ s.frequency }}',
+                      '{{ s.custom_days|default:'' }}',
+                      '{{ s.next_due_at|date:'Y-m-d' }}',
+                      '{{ s.last_done_at|date:'Y-m-d' }}',
+                      '{{ s.assigned_to.id|default:'' }}',
+                      '{{ s.priority }}',
+                      {{ s.is_active|yesno:'true,false' }}
+                    )">
+                    <i class="ti ti-edit"></i>
+                  </button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr id="emptyRow">
+                <td colspan="11" class="text-center py-5 text-muted">
+                  <i class="ti ti-calendar-off d-block mb-2" style="font-size:2rem"></i>
+                  هیچ برنامه PM تعریف نشده
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ردیف "نتیجه‌ای یافت نشد" برای فیلتر -->
+        <div id="noFilterResult" class="text-center py-4 text-muted d-none">
+          <i class="ti ti-search-off d-block mb-1" style="font-size:1.5rem"></i>
+          <small>با فیلتر انتخابی نتیجه‌ای یافت نشد</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ MODAL -->
+<div class="modal fade" id="modalSchedule" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="ti ti-calendar-plus me-2"></i>
+          <span id="modalTitle">برنامه PM جدید</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="schAlert" class="alert alert-danger d-none"></div>
+        <div class="row g-3">
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold">ماشین <span class="text-danger">*</span></label>
+            <select class="form-select" id="sch_machine">
+              <option value="">انتخاب کنید...</option>
+              {% for m in machines %}<option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">نوع نگهداری</label>
+            <select class="form-select" id="sch_type">
+              {% for val,lbl in type_choices %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-bold">عنوان برنامه <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="sch_title" maxlength="200"
+              placeholder="مثال: سرویس ماهانه روانکاری کارد C-01">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-bold">دوره تکرار</label>
+            <select class="form-select" id="sch_frequency" onchange="toggleCustom()">
+              {% for val,lbl in frequency_choices %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4" id="customBlock" style="display:none">
+            <label class="form-label fw-bold">تعداد روز</label>
+            <input type="number" class="form-control" id="sch_custom_days" min="1" max="365" placeholder="45">
+          </div>
+          <div class="col-md-4" id="priorityBlock">
+            <label class="form-label fw-bold">اولویت</label>
+            <select class="form-select" id="sch_priority">
+              {% for val,lbl in priority_choices %}<option value="{{ val }}">{{ lbl }}</option>{% endfor %}
+            </select>
+          </div>
+
+          <!-- تاریخ موعد بعدی -->
+          <div class="col-md-6">
+            <label class="form-label fw-bold">موعد سرویس بعدی <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="sch_next_due"
+                placeholder="۱۴۰۵/۰۱/۰۱" data-jdp autocomplete="off" style="background:#fff">
+              <span class="input-group-text" style="cursor:pointer"
+                    onclick="document.getElementById('sch_next_due').focus()">
+                <i class="ti ti-calendar"></i>
+              </span>
+            </div>
+            <input type="hidden" id="sch_next_due_g">
+          </div>
+
+          <!-- آخرین سرویس -->
+          <div class="col-md-6">
+            <label class="form-label fw-bold">آخرین سرویس انجام‌شده</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="sch_last_done"
+                placeholder="اختیاری" data-jdp autocomplete="off" style="background:#fff">
+              <span class="input-group-text" style="cursor:pointer"
+                    onclick="document.getElementById('sch_last_done').focus()">
+                <i class="ti ti-calendar"></i>
+              </span>
+            </div>
+            <input type="hidden" id="sch_last_done_g">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold">مسئول اجرا</label>
+            <select class="form-select" id="sch_assigned">
+              <option value="">انتخاب نشده</option>
+              {% for u in users %}<option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6 d-none" id="activeBlock">
+            <label class="form-label fw-bold">وضعیت</label>
+            <select class="form-select" id="sch_is_active">
+              <option value="1">فعال</option>
+              <option value="0">غیرفعال</option>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-bold">شرح / چک‌لیست</label>
+            <textarea class="form-control" id="sch_description" rows="3"
+              placeholder="مراحل سرویس، قطعات مورد نیاز، نکات ایمنی..."></textarea>
+          </div>
+        </div>
+        <div class="alert alert-info mt-3 p-2 small mb-0">
+          <i class="ti ti-info-circle me-1"></i>
+          پس از ثبت برنامه، سیستم هنگامی که موعد بعدی فرا رسد هشدار «عقب‌افتاده» نمایش می‌دهد.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="ti ti-x me-1"></i> انصراف
+        </button>
+        <button class="btn btn-primary" id="btnSave" onclick="saveSchedule()">
+          <i class="ti ti-device-floppy me-1"></i> ذخیره
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/JalaliDatePicker/jalalidatepicker.min.js' %}"></script>
+<script>
+
+/* ══════════════════════════════════════════════════════════
+   تبدیل شمسی → میلادی (الگوریتم Borkowski)
+   کپی دقیق از orders/order_form.html — تست‌شده و صحیح
+══════════════════════════════════════════════════════════ */
+function jalaliToGregorian(jy, jm, jd) {
+    jy = parseInt(jy); jm = parseInt(jm); jd = parseInt(jd);
+    if (!jy || !jm || !jd) return '';
+    var jy1 = jy + 979, jm1 = jm - 1, jd1 = jd - 1;
+    var mo = [0,31,59,90,120,151,181,212,243,273,304,334];
+    var jdn = 365*jy1 + Math.floor((jy1+23)/33)*8 +
+              Math.floor(((jy1%33)+3)/4) + 78 + jd1 + mo[jm1];
+    if (jm1 > 5) jdn += 1;
+    var gdn = jdn - 1948440 + 36525;
+    gdn -= Math.floor(gdn/36524.25)*100 - Math.floor(gdn/146097)*400;
+    var lp = Math.floor((gdn-1)/1460) - Math.floor((gdn-1)/36524) + Math.floor((gdn-1)/146096);
+    var y  = Math.floor((gdn+lp)/365) - 400;
+    gdn   -= 365*y + lp;
+    var ml = [31,(y%4==0&&(y%100!=0||y%400==0))?29:28,31,30,31,30,31,31,30,31,30,31];
+    var i = 0;
+    for (; i < 12; i++) { if (gdn <= ml[i]) break; gdn -= ml[i]; }
+    return (y+1)+'-'+String(i+1).padStart(2,'0')+'-'+String(gdn).padStart(2,'0');
+}
+
+/* ══════════════════════════════════════════════════════════
+   تبدیل میلادی → شمسی
+   الگوریتم دقیقاً از کد داخلی JalaliDatePicker (تابع today)
+   تست‌شده: 2025-03-21 => 1404/01/01 ✓
+══════════════════════════════════════════════════════════ */
+function gregorianToJalali(gStr) {
+    if (!gStr) return '';
+    var p = gStr.split('-');
+    if (p.length !== 3 || !p[0]) return '';
+    var i = +p[0], o = +p[1], a = +p[2];
+    var t;
+    if (i > 1600) { t = 979; i -= 1600; }
+    else           { t = 0;   i -= 621;  }
+    var r = (o > 2) ? i + 1 : i;
+    var n = 365*i + Math.floor((r+3)/4) - Math.floor((r+99)/100)
+            + Math.floor((r+399)/400) - 80 + a
+            + [0,31,59,90,120,151,181,212,243,273,304,334][o-1];
+    t += 33 * Math.floor(n / 12053); n %= 12053;
+    t += 4  * Math.floor(n / 1461);  n %= 1461;
+    if (n > 365) { t += Math.floor((n-1)/365); n = (n-1) % 365; }
+    var jm = (n < 186) ? 1 + Math.floor(n/31) : 7 + Math.floor((n-186)/30);
+    var jd = 1 + (n < 186 ? n % 31 : (n-186) % 30);
+    return t + '/' + String(jm).padStart(2,'0') + '/' + String(jd).padStart(2,'0');
+}
+
+/* ══════════════════════════════════════════════════════════
+   JalaliDatePicker — راه‌اندازی یکبار در صفحه
+══════════════════════════════════════════════════════════ */
+jalaliDatepicker.startWatch({
+    selector:      'input[data-jdp]',
+    persianDigits: false,
+    showTodayBtn:  true,
+    showEmptyBtn:  true,
+    zIndex:        99999,
+});
+
+document.addEventListener('jdp:change', function(e) {
+    if (!e.target) return;
+    var val  = e.target.value || '';
+    var p    = val.split('/');
+    var greg = (p.length === 3 && p[0].length >= 4)
+               ? jalaliToGregorian(p[0], p[1], p[2]) : '';
+    if      (e.target.id === 'sch_next_due')  document.getElementById('sch_next_due_g').value  = greg;
+    else if (e.target.id === 'sch_last_done') document.getElementById('sch_last_done_g').value = greg;
+});
+
+/* ══════════════════════════════════════════════════════════
+   فیلتر جدول
+══════════════════════════════════════════════════════════ */
+function applyFilters() {
+    var machine  = document.getElementById('filterMachine').value;
+    var freq     = document.getElementById('filterFreq').value;
+    var type     = document.getElementById('filterType').value;
+    var status   = document.getElementById('filterStatus').value;
+    var priority = document.getElementById('filterPriority').value;
+
+    var rows = document.querySelectorAll('.pm-row');
+    var visible = 0;
+    rows.forEach(function(row) {
+        var show = true;
+        if (machine  && row.dataset.machine  !== machine)  show = false;
+        if (freq     && row.dataset.freq     !== freq)     show = false;
+        if (type     && row.dataset.type     !== type)     show = false;
+        if (status   && row.dataset.status   !== status)   show = false;
+        if (priority && row.dataset.priority !== priority) show = false;
+        row.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    var noResult = document.getElementById('noFilterResult');
+    var countEl  = document.getElementById('filterCount');
+    noResult.classList.toggle('d-none', visible > 0 || rows.length === 0);
+    countEl.textContent = (machine||freq||type||status||priority)
+        ? visible + ' مورد از ' + rows.length : '';
+
+    // شماره‌گذاری مجدد
+    var n = 1;
+    rows.forEach(function(row) {
+        if (row.style.display !== 'none') {
+            row.cells[0].textContent = n++;
+        }
+    });
+}
+
+function resetFilters() {
+    ['filterMachine','filterFreq','filterType','filterStatus','filterPriority']
+        .forEach(function(id){ document.getElementById(id).selectedIndex = 0; });
+    applyFilters();
+}
+
+['filterMachine','filterFreq','filterType','filterStatus','filterPriority']
+    .forEach(function(id){
+        document.getElementById(id).addEventListener('change', applyFilters);
+    });
+
+applyFilters(); // اجرای اولیه
+
+/* ══════════════════════════════════════════════════════════
+   منطق فرم
+══════════════════════════════════════════════════════════ */
+var editId = null;
+
+window.toggleCustom = function() {
+    var freq = document.getElementById('sch_frequency').value;
+    document.getElementById('customBlock').style.display   = freq === 'custom' ? '' : 'none';
+    document.getElementById('priorityBlock').style.display = freq === 'custom' ? 'none' : '';
+};
+
+function clearForm() {
+    ['sch_machine','sch_type','sch_frequency','sch_priority','sch_assigned']
+        .forEach(function(id){ document.getElementById(id).selectedIndex = 0; });
+    ['sch_title','sch_description','sch_custom_days',
+     'sch_next_due','sch_next_due_g','sch_last_done','sch_last_done_g']
+        .forEach(function(id){ document.getElementById(id).value = ''; });
+}
+
+window.openCreate = function() {
+    editId = null;
+    document.getElementById('modalTitle').textContent = 'برنامه PM جدید';
+    document.getElementById('schAlert').classList.add('d-none');
+    document.getElementById('activeBlock').classList.add('d-none');
+    clearForm();
+    document.getElementById('sch_frequency').value = 'monthly';
+    document.getElementById('sch_type').value      = 'preventive';
+    document.getElementById('sch_priority').value  = 'medium';
+    toggleCustom();
+};
+
+window.openEdit = function(id, machine, title, desc, mtype, freq, custom_days,
+                            next_g, last_g, assigned, priority, is_active) {
+    editId = id;
+    document.getElementById('modalTitle').textContent = 'ویرایش برنامه PM';
+    document.getElementById('schAlert').classList.add('d-none');
+    document.getElementById('activeBlock').classList.remove('d-none');
+    document.getElementById('sch_machine').value     = machine;
+    document.getElementById('sch_title').value       = title;
+    document.getElementById('sch_description').value = desc;
+    document.getElementById('sch_type').value        = mtype;
+    document.getElementById('sch_frequency').value   = freq;
+    document.getElementById('sch_custom_days').value = custom_days;
+    document.getElementById('sch_priority').value    = priority;
+    document.getElementById('sch_assigned').value    = assigned;
+    document.getElementById('sch_is_active').value   = is_active ? '1' : '0';
+    toggleCustom();
+    document.getElementById('sch_next_due').value    = gregorianToJalali(next_g);
+    document.getElementById('sch_next_due_g').value  = next_g  || '';
+    document.getElementById('sch_last_done').value   = gregorianToJalali(last_g);
+    document.getElementById('sch_last_done_g').value = last_g || '';
+};
+
+window.saveSchedule = function() {
+    document.getElementById('schAlert').classList.add('d-none');
+    var machine = document.getElementById('sch_machine').value;
+    var title   = document.getElementById('sch_title').value.trim();
+    var next_g  = document.getElementById('sch_next_due_g').value;
+    var freq    = document.getElementById('sch_frequency').value;
+    var custom  = document.getElementById('sch_custom_days').value;
+
+    if (!machine) { showAlert('لطفاً ماشین را انتخاب کنید.'); return; }
+    if (!title)   { showAlert('عنوان برنامه الزامی است.'); return; }
+    if (!next_g)  { showAlert('تاریخ موعد بعدی را از تقویم انتخاب کنید.'); return; }
+    if (freq === 'custom' && !custom) { showAlert('برای دوره سفارشی، تعداد روز را وارد کنید.'); return; }
+
+    var url  = editId ? '/maintenance/schedules/'+editId+'/edit/' : '/maintenance/schedules/create/';
+    var data = new FormData();
+    data.append('csrfmiddlewaretoken', getCsrf());
+    data.append('machine',          machine);
+    data.append('title',            title);
+    data.append('description',      document.getElementById('sch_description').value.trim());
+    data.append('maintenance_type', document.getElementById('sch_type').value);
+    data.append('frequency',        freq);
+    data.append('custom_days',      custom);
+    data.append('next_due_at_g',    next_g);
+    data.append('last_done_at_g',   document.getElementById('sch_last_done_g').value);
+    data.append('assigned_to',      document.getElementById('sch_assigned').value);
+    data.append('priority',         document.getElementById('sch_priority').value);
+    if (editId) data.append('is_active', document.getElementById('sch_is_active').value);
+
+    var btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> در حال ذخیره...';
+
+    fetch(url, { method: 'POST', body: data })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            if (d.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('modalSchedule')).hide();
+                location.reload();
+            } else {
+                showAlert('خطا: ' + (d.error || 'نامشخص'));
+            }
+        })
+        .catch(function(){ showAlert('خطا در ارتباط با سرور'); })
+        .finally(function(){
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ti ti-device-floppy me-1"></i> ذخیره';
+        });
+};
+
+function showAlert(msg) {
+    var el = document.getElementById('schAlert');
+    el.textContent = msg; el.classList.remove('d-none');
+}
+
+function getCsrf() {
+    var c = document.cookie.split(';');
+    for (var i=0; i<c.length; i++) {
+        var p = c[i].trim().split('=');
+        if (p[0] === 'csrftoken') return decodeURIComponent(p[1]);
+    }
+    return '';
+}
+
+</script>
+{% endblock %}

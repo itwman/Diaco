@@ -1,0 +1,245 @@
+{% load static %}
+<!-- Menu Navigation starts -->
+<nav>
+    <div class="app-logo">
+        <a class="logo d-inline-block" href="{% url 'dashboard:index' %}">
+            <img alt="دیاکو MES" src="{% static 'images/logo/1.png' %}">
+        </a>
+        <span class="bg-light-primary toggle-semi-nav d-flex-center">
+            <i class="ti ti-chevron-left"></i>
+        </span>
+        <div class="d-flex align-items-center nav-profile p-3">
+            <span class="h-45 w-45 d-flex-center b-r-10 position-relative bg-primary m-auto">
+                <span class="text-white f-s-18">{{ user.first_name|first|default:"U" }}</span>
+                <span class="position-absolute top-0 start-0 p-1 bg-success border border-light rounded-circle"></span>
+            </span>
+            <div class="flex-grow-1 ps-2">
+                <h6 class="text-primary mb-0">{{ user.get_full_name|default:user.username }}</h6>
+                <p class="text-muted f-s-12 mb-0">{{ user.get_role_display }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-nav" id="app-simple-bar">
+        <ul class="main-nav p-0 mt-2">
+
+            <!-- ── داشبورد ──────────────────────── -->
+            <li class="menu-title"><span>عمومی</span></li>
+            <li>
+                <a href="{% url 'dashboard:index' %}">
+                    <i class="ti ti-dashboard f-s-18"></i> داشبورد
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'dashboard:line_monitor' %}">
+                    <i class="ti ti-activity-heartbeat f-s-18"></i> مانیتورینگ خطوط
+                    <span class="badge bg-success ms-auto" style="font-size:0.65rem;">زنده</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'dashboard:floor_map' %}">
+                    <i class="ti ti-map-2 f-s-18"></i> نقشه کارگاه
+                    <span class="badge bg-danger ms-auto" style="font-size:0.65rem;">Heatmap</span>
+                </a>
+            </li>
+
+            <!-- ── سفارشات ─────────────────────── -->
+            <li class="menu-title"><span>سفارشات</span></li>
+            <li>
+                <a href="{% url 'orders:customer_list' %}">
+                    <i class="ti ti-users f-s-18"></i> مشتریان
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'orders:order_list' %}">
+                    <i class="ti ti-file-text f-s-18"></i> سفارشات
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'orders:shade_list' %}">
+                    <i class="ti ti-palette f-s-18"></i> شیدهای رنگی
+                </a>
+            </li>
+
+            <!-- ── انبار ──────────────────────── -->
+            <li class="menu-title"><span>انبار</span></li>
+            <li>
+                <a href="{% url 'inventory:fiber_list' %}">
+                    <i class="ti ti-box f-s-18"></i> موجودی الیاف
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory:dye_list' %}">
+                    <i class="ti ti-droplet f-s-18"></i> موجودی رنگ
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'inventory:chemical_list' %}">
+                    <i class="ti ti-flask f-s-18"></i> مواد شیمیایی
+                </a>
+            </li>
+
+            <!-- ── خط تولید ────────────────────── -->
+            <li class="menu-title"><span>خط تولید</span></li>
+            <li>
+                <a aria-expanded="false" data-bs-toggle="collapse" href="#production_menu">
+                    <i class="ti ti-settings-2 f-s-18"></i> مراحل تولید
+                </a>
+                <ul class="collapse" id="production_menu">
+                    <li><a href="{% url 'production:blowroom_list' %}">حلاجی</a></li>
+                    <li><a href="{% url 'production:carding_list' %}">کاردینگ</a></li>
+                    <li><a href="{% url 'production:passage_list' %}">پاساژ</a></li>
+                    <li><a href="{% url 'production:finisher_list' %}">فینیشر</a></li>
+                    <li><a href="{% url 'production:spinning_list' %}">رینگ</a></li>
+                </ul>
+            </li>
+
+            <!-- ── تکمیل نخ (v2.0) ──────────────── -->
+            <li class="menu-title"><span>تکمیل نخ</span></li>
+            <li>
+                <a href="{% url 'winding:list' %}">
+                    <i class="ti ti-rotate-2 f-s-18"></i> بوبین‌پیچی
+                    <span class="badge ms-auto" style="background:rgba(6,182,212,.15);color:#0891b2;font-size:.65rem;">WD</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'tfo:list' %}">
+                    <i class="ti ti-infinity f-s-18"></i> دولاتابی TFO
+                    <span class="badge ms-auto" style="background:rgba(139,92,246,.15);color:#7c3aed;font-size:.65rem;">TFO</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'heatset:list' %}">
+                    <i class="ti ti-flame f-s-18"></i> هیت‌ست
+                    <span class="badge ms-auto" style="background:rgba(239,68,68,.15);color:#dc2626;font-size:.65rem;">HS</span>
+                </a>
+            </li>
+
+            <!-- ── نگهداری ────────────────────── -->
+            <li class="menu-title"><span>نگهداری</span></li>
+            <li>
+                <a href="{% url 'maintenance:workorder_list' %}">
+                    <i class="ti ti-tool f-s-18"></i> دستور کار
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'maintenance:schedule_list' %}">
+                    <i class="ti ti-calendar f-s-18"></i> برنامه PM
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'maintenance:downtime_list' %}">
+                    <i class="ti ti-alert-triangle f-s-18"></i> لاگ توقفات
+                </a>
+            </li>
+
+            <!-- ── مدیریت خطوط ────────────────── -->
+            <li class="menu-title"><span>مدیریت خطوط</span></li>
+            <li>
+                <a href="{% url 'core:line_list' %}">
+                    <i class="ti ti-building-factory-2 f-s-18"></i> خطوط تولید
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'core:machine_list' %}">
+                    <i class="ti ti-settings-2 f-s-18"></i> ماشین‌آلات
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'core:shift_list' %}">
+                    <i class="ti ti-clock f-s-18"></i> شیفت‌ها
+                </a>
+            </li>
+
+            <!-- ── گزارشات ────────────────── -->
+            <li class="menu-title"><span>گزارشات</span></li>
+            <li>
+                <a href="{% url 'reports:production_daily' %}">
+                    <i class="ti ti-chart-bar f-s-18"></i> گزارش تولید
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reports:material_consumption' %}">
+                    <i class="ti ti-chart-pie f-s-18"></i> مصرف مواد
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reports:downtime_report' %}">
+                    <i class="ti ti-chart-dots f-s-18"></i> توقفات
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reports:waste_report' %}">
+                    <i class="ti ti-trash f-s-18"></i> ضایعات
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reports:oee_report' %}">
+                    <i class="ti ti-gauge f-s-18"></i> راندمان و OEE
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reports:compare_periods' %}">
+                    <i class="ti ti-git-compare f-s-18"></i> مقایسه بازه
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reports:operator_performance' %}">
+                    <i class="ti ti-users f-s-18"></i> عملکرد اپراتور
+                </a>
+            </li>
+            <li>
+                <a aria-expanded="false" data-bs-toggle="collapse" href="#reports_v2_menu">
+                    <i class="ti ti-report-analytics f-s-18"></i> گزارشات v2.0
+                    <span class="badge ms-auto" style="background:rgba(99,102,241,.15);color:#4f46e5;font-size:.65rem;">جدید</span>
+                </a>
+                <ul class="collapse" id="reports_v2_menu">
+                    <li>
+                        <a href="{% url 'reports:winding_report' %}">
+                            <i class="ti ti-rotate-2" style="color:#0891b2;"></i> بوبین‌پیچی
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'reports:tfo_report' %}">
+                            <i class="ti ti-infinity" style="color:#7c3aed;"></i> دولاتابی TFO
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'reports:heatset_report' %}">
+                            <i class="ti ti-flame" style="color:#dc2626;"></i> هیت‌ست
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'reports:production_chain' %}">
+                            <i class="ti ti-arrow-right-circle"></i> زنجیره تولید
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- ── تبلت ────────────────────── -->
+            <li class="menu-title"><span>اپراتور</span></li>
+            <li>
+                <a href="{% url 'tablet:home' %}">
+                    <i class="ti ti-device-tablet f-s-18"></i> رابط تبلت
+                </a>
+            </li>
+
+            {% if user.is_admin or user.is_manager %}
+            <li class="menu-title"><span>مدیریت</span></li>
+            <li>
+                <a href="{% url 'admin:index' %}">
+                    <i class="ti ti-shield f-s-18"></i> پنل ادمین
+                </a>
+            </li>
+            {% endif %}
+
+        </ul>
+    </div>
+
+    <div class="menu-navs">
+        <span class="menu-previous"><i class="ti ti-chevron-right"></i></span>
+        <span class="menu-next"><i class="ti ti-chevron-left"></i></span>
+    </div>
+</nav>
+<!-- Menu Navigation ends -->

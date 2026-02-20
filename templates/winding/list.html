@@ -1,0 +1,190 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block header_actions %}
+<a href="{% url 'winding:create' %}" class="btn btn-primary btn-sm">
+    <i class="ti ti-plus me-1"></i> بچ جدید
+</a>
+{% endblock %}
+
+{% block extra_before_table %}
+{# آمار #}
+<div class="card-header border-top py-3">
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-primary">
+                    <i class="ti ti-packages f-s-18 text-primary"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.total }}</div>
+                    <div class="text-muted f-s-12">کل بچ‌ها</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-warning">
+                    <i class="ti ti-loader f-s-18 text-warning"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.in_progress }}</div>
+                    <div class="text-muted f-s-12">در جریان</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-success">
+                    <i class="ti ti-check f-s-18 text-success"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.completed }}</div>
+                    <div class="text-muted f-s-12">تکمیل شده</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-info">
+                    <i class="ti ti-weight f-s-18 text-info"></i>
+                </div>
+                <div>
+                    <div class="f-w-700 f-s-16">{{ stats.total_output_kg|floatformat:0 }} kg</div>
+                    <div class="text-muted f-s-12">خروجی کل</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {# فیلتر #}
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="ti ti-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="شماره بچ، سفارش، ماشین..."
+                       value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">همه وضعیت‌ها</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="machine" class="form-select form-select-sm">
+                <option value="">همه ماشین‌ها</option>
+                {% for m in machines %}
+                <option value="{{ m.id }}" {% if machine_filter == m.id|stringformat:"s" %}selected{% endif %}>{{ m.code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_from" class="form-control form-control-sm"
+                   value="{{ date_from }}" placeholder="از تاریخ">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_to" class="form-control form-control-sm"
+                   value="{{ date_to }}" placeholder="تا تاریخ">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary btn-sm">فیلتر</button>
+            {% if search_query or status_filter or machine_filter or date_from or date_to %}
+            <a href="{% url 'winding:list' %}" class="btn btn-outline-secondary btn-sm">پاک</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+<th>#</th>
+<th>شماره بچ</th>
+<th>ماشین</th>
+<th>تاریخ</th>
+<th>بچ رینگ ورودی</th>
+<th>خروجی (kg)</th>
+<th>کیفیت (cuts/100km)</th>
+<th>راندمان</th>
+<th>وضعیت</th>
+<th>عملیات</th>
+{% endblock %}
+
+{% block table_body %}
+{% for item in object_list %}
+<tr>
+    <td class="text-muted f-s-13">{{ forloop.counter }}</td>
+    <td>
+        <a href="{% url 'winding:detail' item.pk %}"
+           class="f-w-600 text-decoration-none font-monospace text-primary">
+            {{ item.batch_number }}
+        </a>
+        {% if item.order %}
+        <div class="text-muted f-s-11">{{ item.order.order_number }}</div>
+        {% endif %}
+    </td>
+    <td>
+        <span class="badge bg-light-info text-info">{{ item.machine.code }}</span>
+    </td>
+    <td class="f-s-13">{{ item.production_date|to_jalali }}</td>
+    <td class="f-s-12 text-muted">
+        {% if item.spinning_production %}
+        <span class="font-monospace">{{ item.spinning_production.batch_number }}</span>
+        {% else %}—{% endif %}
+    </td>
+    <td>
+        {% if item.output_weight_kg %}
+        <span class="f-w-600">{{ item.output_weight_kg|floatformat:1 }}</span>
+        <small class="text-muted"> kg</small>
+        {% else %}—{% endif %}
+    </td>
+    <td>
+        {% if item.cuts_per_100km is not None %}
+            {% if item.cuts_per_100km < 20 %}
+            <span class="badge bg-success">{{ item.cuts_per_100km }} — عالی</span>
+            {% elif item.cuts_per_100km < 40 %}
+            <span class="badge bg-warning text-dark">{{ item.cuts_per_100km }} — خوب</span>
+            {% elif item.cuts_per_100km < 60 %}
+            <span class="badge bg-orange text-white">{{ item.cuts_per_100km }} — متوسط</span>
+            {% else %}
+            <span class="badge bg-danger">{{ item.cuts_per_100km }} — ضعیف</span>
+            {% endif %}
+        {% else %}—{% endif %}
+    </td>
+    <td>
+        {% if item.efficiency_pct %}
+        <div class="d-flex align-items-center gap-1" style="min-width:90px;">
+            <div class="progress flex-grow-1" style="height:6px;">
+                <div class="progress-bar {% if item.efficiency_pct >= 90 %}bg-success{% elif item.efficiency_pct >= 75 %}bg-warning{% else %}bg-danger{% endif %}"
+                     style="width:{{ item.efficiency_pct }}%"></div>
+            </div>
+            <small class="text-muted">{{ item.efficiency_pct|floatformat:0 }}%</small>
+        </div>
+        {% else %}—{% endif %}
+    </td>
+    <td>
+        {% if item.status == 'in_progress' %}
+        <span class="badge bg-light-warning text-warning"><i class="ti ti-circle-filled f-s-9"></i> در جریان</span>
+        {% elif item.status == 'completed' %}
+        <span class="badge bg-light-success text-success"><i class="ti ti-check f-s-9"></i> تکمیل</span>
+        {% elif item.status == 'quality_hold' %}
+        <span class="badge bg-light-danger text-danger">توقف کیفی</span>
+        {% else %}
+        <span class="badge bg-light-secondary text-secondary">{{ item.get_status_display }}</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'winding:detail' item.pk %}" class="btn btn-outline-primary" title="جزئیات">
+                <i class="ti ti-eye"></i>
+            </a>
+            <a href="{% url 'winding:edit' item.pk %}" class="btn btn-outline-secondary" title="ویرایش">
+                <i class="ti ti-pencil"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% endfor %}
+{% endblock %}

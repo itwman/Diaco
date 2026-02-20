@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}ماشین‌آلات | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0"><i class="ti ti-settings-2 text-primary me-2"></i>ماشین‌آلات</h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item active">ماشین‌آلات</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- فیلترها -->
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+                    <select name="line" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                        <option value="">همه خطوط</option>
+                        {% for l in lines %}
+                        <option value="{{ l.code }}" {% if current_line == l.code %}selected{% endif %}>{{ l.code }} - {{ l.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="type" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                        <option value="">همه انواع</option>
+                        {% for val, label in machine_types %}
+                        <option value="{{ val }}" {% if current_type == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="status" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                        <option value="">همه وضعیت‌ها</option>
+                        {% for val, label in machine_statuses %}
+                        <option value="{{ val }}" {% if current_status == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if current_line or current_type or current_status %}
+                    <a href="{% url 'core:machine_list' %}" class="btn btn-sm btn-outline-danger">
+                        <i class="ti ti-x"></i> پاک‌سازی
+                    </a>
+                    {% endif %}
+                    <div class="ms-auto d-flex gap-2 align-items-center">
+                        <span class="badge bg-light-primary f-s-13">{{ object_list|length }} ماشین</span>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#machineModal">
+                            <i class="ti ti-plus me-1"></i> ماشین جدید
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- جدول -->
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>کد</th>
+                                <th>نام</th>
+                                <th>خط تولید</th>
+                                <th>نوع</th>
+                                <th>وضعیت</th>
+                                <th>سازنده</th>
+                                <th>محل</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in object_list %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td class="f-w-600"><code>{{ m.code }}</code></td>
+                                <td>{{ m.name }}</td>
+                                <td>
+                                    {% if m.production_line %}
+                                    <a href="{% url 'core:line_detail' pk=m.production_line.pk %}">{{ m.production_line.code }}</a>
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ m.get_machine_type_display }}</td>
+                                <td>
+                                    {% if m.status == 'active' %}
+                                    <span class="badge bg-light-success text-success">فعال</span>
+                                    {% elif m.status == 'maintenance' %}
+                                    <span class="badge bg-light-warning text-warning">تعمیری</span>
+                                    {% elif m.status == 'inactive' %}
+                                    <span class="badge bg-light-secondary text-secondary">غیرفعال</span>
+                                    {% else %}
+                                    <span class="badge bg-light-danger text-danger">از رده خارج</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ m.manufacturer|default:"-" }}</td>
+                                <td>{{ m.location|default:"-" }}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                            onclick="editMachine({{ m.id }},'{{ m.code }}','{{ m.name|escapejs }}','{{ m.machine_type }}','{{ m.status }}','{{ m.production_line_id|default:'' }}','{{ m.manufacturer|escapejs }}','{{ m.model_name|escapejs }}','{{ m.location|escapejs }}','{{ m.year_installed|default:'' }}')">
+                                        <i class="ti ti-edit f-s-14"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="ti ti-database-off f-s-24 d-block mb-2"></i>
+                                    ماشینی یافت نشد
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن/ویرایش ماشین -->
+<div class="modal fade" id="machineModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="machineModalTitle">ماشین جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="machineForm">
+                {% csrf_token %}
+                <input type="hidden" id="machineId" value="">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">کد ماشین <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="mCode" required placeholder="مثال: RG-01" dir="ltr">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">نام ماشین <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="mName" required placeholder="مثال: رینگ سالن الف شماره ۱">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">نوع ماشین <span class="text-danger">*</span></label>
+                            <select class="form-select" id="mType">
+                                {% for v,l in machine_types %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">خط تولید</label>
+                            <select class="form-select" id="mLine">
+                                <option value="">اختصاص نشده</option>
+                                {% for l in lines %}<option value="{{ l.id }}">{{ l.code }} — {{ l.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">وضعیت</label>
+                            <select class="form-select" id="mStatus">
+                                {% for v,l in machine_statuses %}<option value="{{ v }}" {% if v == 'active' %}selected{% endif %}>{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">محل استقرار</label>
+                            <input type="text" class="form-control" id="mLocation" placeholder="مثال: سالن الف">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">سازنده</label>
+                            <input type="text" class="form-control" id="mManufacturer">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">مدل</label>
+                            <input type="text" class="form-control" id="mModel" dir="ltr">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">سال نصب</label>
+                            <input type="number" class="form-control" id="mYear" min="1980" max="2030" placeholder="مثال: 1398">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary" id="machineSubmitBtn">
+                        <i class="ti ti-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('machineModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('machineId').value = '';
+    document.getElementById('machineModalTitle').textContent = 'ماشین جدید';
+    document.getElementById('machineForm').reset();
+});
+
+function editMachine(id, code, name, type, status, lineId, mfr, model, loc, year) {
+    document.getElementById('machineId').value = id;
+    document.getElementById('machineModalTitle').textContent = 'ویرایش: ' + code;
+    document.getElementById('mCode').value = code;
+    document.getElementById('mName').value = name;
+    document.getElementById('mType').value = type;
+    document.getElementById('mStatus').value = status;
+    document.getElementById('mLine').value = lineId;
+    document.getElementById('mManufacturer').value = mfr;
+    document.getElementById('mModel').value = model;
+    document.getElementById('mLocation').value = loc;
+    document.getElementById('mYear').value = year;
+    new bootstrap.Modal(document.getElementById('machineModal')).show();
+}
+
+document.getElementById('machineForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('machineId').value;
+    const url = id ? `/core/machines/${id}/edit/` : `/core/machines/create/`;
+    const data = new FormData();
+    data.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    const fields = {code: 'mCode', name: 'mName', machine_type: 'mType', status: 'mStatus',
+                    production_line: 'mLine', manufacturer: 'mManufacturer',
+                    model_name: 'mModel', location: 'mLocation', year_installed: 'mYear'};
+    Object.entries(fields).forEach(([k,v]) => { const el = document.getElementById(v); if(el) data.append(k, el.value); });
+    const btn = document.getElementById('machineSubmitBtn');
+    btn.disabled = true;
+    fetch(url, {method: 'POST', body: data})
+        .then(r => r.json())
+        .then(res => { if (res.ok) location.reload(); else { alert('خطا: ' + res.error); btn.disabled = false; } })
+        .catch(() => { btn.disabled = false; });
+});
+</script>
+{% endblock %}

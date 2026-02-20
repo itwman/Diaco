@@ -1,0 +1,3 @@
+{% extends "production/production_base_list.html" %}
+{% block extra_headers %}<th>پاساژ</th><th>ورودی‌ها</th><th>کشش</th><th>CV%</th>{% endblock %}
+{% block extra_cols %}<td>{{ item.get_passage_number_display }}</td><td>{{ item.num_inputs }}</td><td>{{ item.draft_ratio }}</td><td>{{ item.evenness_cv|default:"-" }}</td>{% endblock %}

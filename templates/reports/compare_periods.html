@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load static %}
+{% load jalali_tags %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://unpkg.com/persian-datepicker@latest/dist/css/persian-datepicker.min.css" rel="stylesheet">
+<style>
+    .datepicker-plot-area { font-family: 'Vazirmatn FD', sans-serif !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <!-- خط تولید -->
+            <div class="col-auto">
+                <label class="form-label f-s-13">خط تولید</label>
+                <select name="line" class="form-select form-select-sm">
+                    <option value="">همه خطوط</option>
+                    {% for ln in lines %}
+                    <option value="{{ ln.id }}" {% if selected_line.id == ln.id %}selected{% endif %}>{{ ln.code }} - {{ ln.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- دوره A -->
+            <div class="col-auto">
+                <label class="form-label f-s-13 text-primary fw-bold">دوره A از</label>
+                <input type="text" class="form-control form-control-sm border-primary jalali-picker"
+                       id="a-from-display" value="{{ a_from|to_jalali }}" autocomplete="off" style="min-width:130px;">
+                <input type="hidden" name="a_from" id="a-from-hidden" value="{{ a_from|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label f-s-13 text-primary fw-bold">تا</label>
+                <input type="text" class="form-control form-control-sm border-primary jalali-picker"
+                       id="a-to-display" value="{{ a_to|to_jalali }}" autocomplete="off" style="min-width:130px;">
+                <input type="hidden" name="a_to" id="a-to-hidden" value="{{ a_to|date:'Y-m-d' }}">
+            </div>
+            <!-- دوره B -->
+            <div class="col-auto">
+                <label class="form-label f-s-13 text-success fw-bold">دوره B از</label>
+                <input type="text" class="form-control form-control-sm border-success jalali-picker"
+                       id="b-from-display" value="{{ b_from|to_jalali }}" autocomplete="off" style="min-width:130px;">
+                <input type="hidden" name="b_from" id="b-from-hidden" value="{{ b_from|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label class="form-label f-s-13 text-success fw-bold">تا</label>
+                <input type="text" class="form-control form-control-sm border-success jalali-picker"
+                       id="b-to-display" value="{{ b_to|to_jalali }}" autocomplete="off" style="min-width:130px;">
+                <input type="hidden" name="b_to" id="b-to-hidden" value="{{ b_to|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-arrows-exchange me-1"></i>مقایسه</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- جدول مقایسه -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="ti ti-arrows-exchange me-1"></i>
+            <span class="text-primary">دوره A ({{ a_from|to_jalali }} - {{ a_to|to_jalali }})</span>
+            &nbsp;vs&nbsp;
+            <span class="text-success">دوره B ({{ b_from|to_jalali }} - {{ b_to|to_jalali }})</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>شاخص</th><th class="text-primary">دوره A</th><th class="text-success">دوره B</th><th>تغییر</th><th>وضعیت</th></tr>
+                </thead>
+                <tbody>
+                    {% for c in comparisons %}
+                    <tr>
+                        <td><strong>{{ c.label }}</strong></td>
+                        <td class="text-primary">{{ c.val_a|floatformat:1 }} {{ c.unit }}</td>
+                        <td class="text-success">{{ c.val_b|floatformat:1 }} {{ c.unit }}</td>
+                        <td>
+                            {% if not c.is_same %}
+                            <span class="{% if c.change_pct > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if c.change_pct > 0 %}+{% endif %}{{ c.change_pct }}%
+                            </span>
+                            {% else %}<span class="text-muted">-</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if c.is_same %}<span class="badge bg-secondary">بدون تغییر</span>
+                            {% elif c.is_better %}<span class="badge bg-success"><i class="ti ti-arrow-up"></i> بهبود</span>
+                            {% else %}<span class="badge bg-danger"><i class="ti ti-arrow-down"></i> افت</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- نمودار -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">نمودار مقایسه‌ای</h6></div>
+    <div class="card-body"><div id="chart-compare" style="height:350px;"></div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://unpkg.com/persian-date@latest/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@latest/dist/js/persian-datepicker.min.js"></script>
+<script>
+// نمودار مقایسه
+var cdata = {{ chart_data|safe }};
+new ApexCharts(document.querySelector("#chart-compare"), {
+    chart: {type:'bar', height:350, fontFamily:'Vazirmatn FD'},
+    series: [
+        {name:'دوره A', data: cdata.period_a},
+        {name:'دوره B', data: cdata.period_b},
+    ],
+    xaxis: {categories: cdata.labels},
+    colors: ['#4361ee', '#198754'],
+    plotOptions: {bar:{borderRadius:4, columnWidth:'50%'}},
+    dataLabels: {enabled:false},
+    legend: {position:'top'},
+}).render();
+
+// datepicker شمسی
+$(document).ready(function(){
+    function initJalali(displayId, hiddenId) {
+        $(displayId).persianDatepicker({
+            format: 'YYYY/MM/DD',
+            autoClose: true,
+            initialValueType: 'persian',
+            calendar: { persian: { locale: 'fa' } },
+            onSelect: function(unix){
+                var pd = new persianDate(unix);
+                var gd = pd.toCalendar('gregorian');
+                var m = ('0' + gd.month()).slice(-2);
+                var d = ('0' + gd.date()).slice(-2);
+                $(hiddenId).val(gd.year() + '-' + m + '-' + d);
+            }
+        });
+    }
+    initJalali('#a-from-display', '#a-from-hidden');
+    initJalali('#a-to-display', '#a-to-hidden');
+    initJalali('#b-from-display', '#b-from-hidden');
+    initJalali('#b-to-display', '#b-to-hidden');
+});
+</script>
+{% endblock %}

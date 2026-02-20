@@ -1,0 +1,204 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block header_actions %}
+<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#woModal">
+    <i class="ti ti-plus me-1"></i> دستور کار جدید
+</button>
+{% endblock %}
+
+{% block extra_before_table %}
+<div class="card-body border-bottom py-2">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+        <select name="status" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+            <option value="">همه وضعیت‌ها</option>
+            {% for v,l in status_choices %}<option value="{{ v }}" {% if status_filter == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+        <select name="priority" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+            <option value="">همه اولویت‌ها</option>
+            {% for v,l in priority_choices %}<option value="{{ v }}" {% if priority_filter == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+        <select name="type" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+            <option value="">همه انواع</option>
+            {% for v,l in type_choices %}<option value="{{ v }}" {% if type_filter == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+        {% if status_filter or priority_filter or type_filter %}
+        <a href="{% url 'maintenance:workorder_list' %}" class="btn btn-sm btn-outline-danger"><i class="ti ti-x"></i></a>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+<th>#</th>
+<th>شماره WO</th>
+<th>ماشین</th>
+<th>عنوان</th>
+<th>نوع</th>
+<th>اولویت</th>
+<th>وضعیت</th>
+<th>توقف (دقیقه)</th>
+<th>هزینه کل</th>
+<th></th>
+{% endblock %}
+
+{% block table_body %}
+{% for wo in object_list %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td class="f-w-600"><code>{{ wo.wo_number }}</code></td>
+    <td>{{ wo.machine.code }}</td>
+    <td>{{ wo.title }}</td>
+    <td>{{ wo.get_wo_type_display }}</td>
+    <td>
+        {% if wo.priority == 'critical' %}<span class="badge bg-danger">{{ wo.get_priority_display }}</span>
+        {% elif wo.priority == 'high' %}<span class="badge bg-warning text-dark">{{ wo.get_priority_display }}</span>
+        {% elif wo.priority == 'medium' %}<span class="badge bg-info text-dark">{{ wo.get_priority_display }}</span>
+        {% else %}<span class="badge bg-secondary">{{ wo.get_priority_display }}</span>{% endif %}
+    </td>
+    <td>
+        {% if wo.status == 'completed' %}<span class="badge bg-light-success text-success">{{ wo.get_status_display }}</span>
+        {% elif wo.status == 'in_progress' %}<span class="badge bg-light-primary text-primary">{{ wo.get_status_display }}</span>
+        {% elif wo.status == 'waiting_parts' %}<span class="badge bg-light-warning text-warning">{{ wo.get_status_display }}</span>
+        {% elif wo.status == 'cancelled' %}<span class="badge bg-light-danger text-danger">{{ wo.get_status_display }}</span>
+        {% else %}<span class="badge bg-light-secondary text-secondary">{{ wo.get_status_display }}</span>{% endif %}
+    </td>
+    <td>{{ wo.downtime_min|default:"-" }}</td>
+    <td>{% if wo.total_cost %}{{ wo.total_cost|floatformat:0 }} ریال{% else %}-{% endif %}</td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                onclick="editWO({{ wo.id }},'{{ wo.wo_number }}','{{ wo.machine_id }}','{{ wo.title|escapejs }}','{{ wo.wo_type }}','{{ wo.priority }}','{{ wo.status }}','{{ wo.downtime_min|default:'' }}','{{ wo.cost_parts }}','{{ wo.cost_labor }}','{{ wo.notes|escapejs }}')">
+            <i class="ti ti-edit f-s-14"></i>
+        </button>
+    </td>
+</tr>
+{% endfor %}
+{% endblock %}
+
+{% block extra_content %}
+<div class="modal fade" id="woModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="woModalTitle">دستور کار جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="woForm">
+                {% csrf_token %}
+                <input type="hidden" id="woId" value="">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">ماشین <span class="text-danger">*</span></label>
+                            <select class="form-select" id="woMachine" required>
+                                <option value="">— انتخاب کنید —</option>
+                                {% for m in machines %}
+                                <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">نوع <span class="text-danger">*</span></label>
+                            <select class="form-select" id="woType">
+                                {% for v,l in type_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">اولویت</label>
+                            <select class="form-select" id="woPriority">
+                                {% for v,l in priority_choices %}<option value="{{ v }}" {% if v == 'medium' %}selected{% endif %}>{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">عنوان <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="woTitle" required placeholder="خلاصه‌ای از کار تعمیراتی">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">شرح</label>
+                            <textarea class="form-control" id="woDesc" rows="2" placeholder="جزئیات بیشتر..."></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">وضعیت</label>
+                            <select class="form-select" id="woStatus">
+                                {% for v,l in status_choices %}<option value="{{ v }}" {% if v == 'open' %}selected{% endif %}>{{ l }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">مدت توقف (دقیقه)</label>
+                            <input type="number" class="form-control" id="woDowntime" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">مسئول اجرا</label>
+                            <select class="form-select" id="woAssigned">
+                                <option value="">تعیین نشده</option>
+                                {% for u in users %}<option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">هزینه قطعات (ریال)</label>
+                            <input type="number" class="form-control" id="woCostParts" min="0" step="1000" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">هزینه دستمزد (ریال)</label>
+                            <input type="number" class="form-control" id="woCostLabor" min="0" step="1000" value="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">یادداشت</label>
+                            <textarea class="form-control" id="woNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary" id="woSubmitBtn">
+                        <i class="ti ti-check me-1"></i> ذخیره
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('woModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('woId').value = '';
+    document.getElementById('woModalTitle').textContent = 'دستور کار جدید';
+    document.getElementById('woForm').reset();
+    document.getElementById('woCostParts').value = '0';
+    document.getElementById('woCostLabor').value = '0';
+});
+
+function editWO(id, num, machineId, title, type, priority, status, downtime, costParts, costLabor, notes) {
+    document.getElementById('woId').value = id;
+    document.getElementById('woModalTitle').textContent = 'ویرایش: ' + num;
+    document.getElementById('woMachine').value = machineId;
+    document.getElementById('woTitle').value = title;
+    document.getElementById('woType').value = type;
+    document.getElementById('woPriority').value = priority;
+    document.getElementById('woStatus').value = status;
+    document.getElementById('woDowntime').value = downtime;
+    document.getElementById('woCostParts').value = costParts;
+    document.getElementById('woCostLabor').value = costLabor;
+    document.getElementById('woNotes').value = notes;
+    new bootstrap.Modal(document.getElementById('woModal')).show();
+}
+
+document.getElementById('woForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('woId').value;
+    const url = id ? `/maintenance/workorders/${id}/edit/` : `/maintenance/workorders/create/`;
+    const data = new FormData();
+    data.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    const fields = {machine: 'woMachine', title: 'woTitle', description: 'woDesc', wo_type: 'woType',
+                    priority: 'woPriority', status: 'woStatus', downtime_min: 'woDowntime',
+                    assigned_to: 'woAssigned', cost_parts: 'woCostParts', cost_labor: 'woCostLabor', notes: 'woNotes'};
+    Object.entries(fields).forEach(([k,v]) => { const el = document.getElementById(v); if(el) data.append(k, el.value); });
+    const btn = document.getElementById('woSubmitBtn');
+    btn.disabled = true;
+    fetch(url, {method: 'POST', body: data})
+        .then(r => r.json())
+        .then(res => { if (res.ok) location.reload(); else { alert('خطا: ' + res.error); btn.disabled = false; } })
+        .catch(() => { btn.disabled = false; });
+});
+</script>
+{% endblock %}

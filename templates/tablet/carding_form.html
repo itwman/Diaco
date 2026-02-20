@@ -1,0 +1,178 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت کاردینگ{% endblock %}
+{% block header_icon %}arrows-split-2{% endblock %}
+{% block header_title %}ثبت تولید کاردینگ{% endblock %}
+
+{% block content %}
+<style>
+    .quick-hint {
+        background: #f0f9ff;
+        border-right: 4px solid #38bdf8;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        color: #0369a1;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: #0ea5e9; }
+
+    .weight-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+    }
+    .weight-box {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+    }
+    .weight-box label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .weight-box input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+        color: #1e293b;
+        outline: none;
+    }
+    .weight-box.primary { border-color: #667eea; background: #f5f3ff; }
+    .weight-box.auto { border-color: #f97316; background: #fff7f0; }
+    .weight-box.auto input { color: #c2410c; }
+</style>
+
+<form method="post" class="tablet-form" id="cardingForm">
+    {% csrf_token %}
+
+    <div class="quick-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>کاردینگ = باز کردن و تبدیل الیاف به فتیله. فقط وزن و بچ ورودی لازم است.</span>
+    </div>
+
+    <!-- ماشین و ورودی -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین و ورودی</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین کاردینگ <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">بچ حلاجی ورودی <span class="text-danger">*</span></label>
+                <select name="blowroom_batch" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for b in blowroom_batches %}
+                    <option value="{{ b.id }}">
+                        {{ b.batch_number }}{% if b.output_weight %} — {{ b.output_weight }} kg{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- وزن — مهم‌ترین بخش -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scale"></i> وزن (کیلوگرم)</div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>ورودی <span class="text-danger">*</span></label>
+                <input type="number" name="input_weight" id="inWeight"
+                       placeholder="۰.۰" step="0.1" min="0" required
+                       oninput="calcWaste()">
+            </div>
+            <div class="weight-box">
+                <label>خروجی</label>
+                <input type="number" name="output_weight" id="outWeight"
+                       placeholder="۰.۰" step="0.1" min="0"
+                       oninput="calcWaste()">
+            </div>
+            <div class="weight-box auto">
+                <label>ضایعات (خودکار)</label>
+                <input type="text" id="wasteDisp" placeholder="—" readonly style="cursor:default;">
+                <input type="hidden" name="waste_weight" id="wasteHidden">
+            </div>
+        </div>
+    </div>
+
+    <!-- وزن فتیله — پارامتر فنی ساده -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-settings"></i> مشخصات فتیله</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">وزن فتیله (گرم/متر)</label>
+                <input type="number" name="sliver_weight_gperm" class="form-control"
+                       step="0.01" placeholder="مثلاً ۴.۵">
+                <div style="margin-top:6px; font-size:0.78rem; color:#94a3b8;">
+                    وزن هر متر فتیله خروجی
+                </div>
+            </div>
+            <div>
+                <label class="form-label">تعداد گره (Neps) — اختیاری</label>
+                <input type="number" name="neps_count" class="form-control"
+                       placeholder="شمارش گره‌های نمونه">
+                <div style="margin-top:6px; font-size:0.78rem; color:#94a3b8;">
+                    اگر آزمایش کیفی انجام شد وارد کنید
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="مشکلات، توقف‌ها، تنظیمات غیرمعمول..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-success flex-fill" id="submitBtn">
+            <i class="ti ti-check"></i> ثبت تولید کاردینگ
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function calcWaste() {
+    const inW = parseFloat(document.getElementById('inWeight').value) || 0;
+    const outW = parseFloat(document.getElementById('outWeight').value) || 0;
+    if (inW > 0 && outW > 0 && inW >= outW) {
+        const waste = (inW - outW).toFixed(1);
+        document.getElementById('wasteDisp').value = waste + ' kg';
+        document.getElementById('wasteHidden').value = waste;
+    } else {
+        document.getElementById('wasteDisp').value = '';
+        document.getElementById('wasteHidden').value = '';
+    }
+}
+
+document.getElementById('cardingForm').addEventListener('submit', function(){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

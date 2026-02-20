@@ -1,0 +1,102 @@
+{% extends "reports/report_base.html" %}
+{% block report_content %}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    {% for s in sections %}
+    <div class="col-md-3 col-6">
+        <div class="card h-100 {% if s.waste_pct > 8 %}border-danger{% elif s.waste_pct > 5 %}border-warning{% endif %}">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">{{ s.label }}</h6>
+                <h3 class="mb-0 {% if s.waste_pct > 8 %}text-danger{% elif s.waste_pct > 5 %}text-warning{% else %}text-success{% endif %}">
+                    {{ s.waste_pct }}%
+                </h3>
+                <small class="text-muted">{{ s.total_waste|floatformat:1 }} kg از {{ s.total_input|floatformat:1 }} kg</small>
+                <br><small class="badge bg-light text-dark">{{ s.batch_count }} بچ</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- نمودار درصد ضایعات بخش‌ها -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-chart-bar me-1"></i> درصد ضایعات به تفکیک بخش</h6></div>
+    <div class="card-body"><div id="chart-waste-section" style="height:300px;"></div></div>
+</div>
+
+<!-- نمودار روند روزانه -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-chart-line me-1"></i> روند ضایعات روزانه (حلاجی)</h6></div>
+    <div class="card-body"><div id="chart-waste-trend" style="height:300px;"></div></div>
+</div>
+
+<!-- جدول ضایعات به تفکیک ماشین -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-cpu me-1"></i> ضایعات به تفکیک ماشین</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>بخش</th><th>ماشین</th><th>ضایعات (kg)</th><th>درصد ضایعات</th><th>تعداد بچ</th><th>وضعیت</th></tr>
+                </thead>
+                <tbody>
+                    {% for m in by_machine %}
+                    <tr>
+                        <td>{{ m.section }}</td>
+                        <td><strong>{{ m.machine }}</strong></td>
+                        <td>{{ m.waste_kg|floatformat:1 }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:6px;">
+                                    <div class="progress-bar {% if m.waste_pct > 8 %}bg-danger{% elif m.waste_pct > 5 %}bg-warning{% else %}bg-success{% endif %}"
+                                         style="width:{{ m.waste_pct }}%"></div>
+                                </div>
+                                <span class="f-s-12">{{ m.waste_pct }}%</span>
+                            </div>
+                        </td>
+                        <td>{{ m.batch_count }}</td>
+                        <td>
+                            {% if m.waste_pct > 8 %}<span class="badge bg-danger">بحرانی</span>
+                            {% elif m.waste_pct > 5 %}<span class="badge bg-warning">هشدار</span>
+                            {% else %}<span class="badge bg-success">نرمال</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">داده‌ای یافت نشد</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+var sectionData = {{ chart_data|safe }};
+var trendData = {{ trend_data|safe }};
+
+// بخش‌ها
+new ApexCharts(document.querySelector("#chart-waste-section"), {
+    chart: {type:'bar', height:300, fontFamily:'Vazirmatn FD'},
+    series: [{name:'درصد ضایعات', data: sectionData.map(d=>d.value)}],
+    xaxis: {categories: sectionData.map(d=>d.label)},
+    colors: ['#dc3545'],
+    yaxis: {title:{text:'درصد (%)'}, max:15},
+    plotOptions: {bar:{borderRadius:4, columnWidth:'60%'}},
+}).render();
+
+// روند
+new ApexCharts(document.querySelector("#chart-waste-trend"), {
+    chart: {type:'area', height:300, fontFamily:'Vazirmatn FD'},
+    series: [
+        {name:'درصد ضایعات', data: trendData.map(d=>d.waste_pct)},
+    ],
+    xaxis: {categories: trendData.map(d=>d.date)},
+    colors: ['#dc3545'],
+    stroke: {curve:'smooth', width:2},
+    yaxis: {title:{text:'درصد (%)'}},
+}).render();
+</script>
+{% endblock %}

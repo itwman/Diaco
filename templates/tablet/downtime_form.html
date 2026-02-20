@@ -1,0 +1,272 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت توقف{% endblock %}
+{% block header_icon %}alert-triangle{% endblock %}
+{% block header_title %}ثبت توقف ماشین{% endblock %}
+
+{% block content %}
+<style>
+    /* کارت‌های دلیل توقف */
+    .reason-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    .reason-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px 10px;
+        text-align: center;
+        cursor: pointer;
+        background: #f8fafc;
+        transition: all 0.2s;
+        user-select: none;
+    }
+    .reason-card i {
+        font-size: 1.8rem;
+        display: block;
+        margin-bottom: 6px;
+    }
+    .reason-card span {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #374151;
+        display: block;
+    }
+    .reason-card.active {
+        border-width: 3px;
+        transform: scale(1.03);
+    }
+    /* رنگ‌بندی هر دلیل */
+    .reason-card[data-cat="mechanical"] i { color: #dc2626; }
+    .reason-card[data-cat="mechanical"].active { border-color: #dc2626; background: #fff1f2; }
+    .reason-card[data-cat="electrical"] i { color: #ea580c; }
+    .reason-card[data-cat="electrical"].active { border-color: #ea580c; background: #fff7ed; }
+    .reason-card[data-cat="material"] i { color: #ca8a04; }
+    .reason-card[data-cat="material"].active { border-color: #ca8a04; background: #fefce8; }
+    .reason-card[data-cat="operator"] i { color: #7c3aed; }
+    .reason-card[data-cat="operator"].active { border-color: #7c3aed; background: #faf5ff; }
+    .reason-card[data-cat="quality"] i { color: #0284c7; }
+    .reason-card[data-cat="quality"].active { border-color: #0284c7; background: #f0f9ff; }
+    .reason-card[data-cat="planned"] i { color: #16a34a; }
+    .reason-card[data-cat="planned"].active { border-color: #16a34a; background: #f0fdf4; }
+    .reason-card[data-cat="other"] i { color: #64748b; }
+    .reason-card[data-cat="other"].active { border-color: #64748b; background: #f8fafc; }
+
+    /* مدت زمان */
+    .duration-group {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .dur-btn {
+        min-height: 52px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .dur-btn:hover { border-color: #667eea; background: #f5f3ff; }
+    .dur-btn.active { background: linear-gradient(135deg,#667eea,#764ba2); color:white; border-color:#667eea; }
+
+    /* هشدار خودکار */
+    .alert-auto {
+        background: #fff7ed;
+        border: 2px solid #fed7aa;
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 0.88rem;
+        color: #c2410c;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        display: none;
+    }
+    .alert-auto.show { display: flex; }
+
+    .d-none { display: none; }
+
+    @media (max-width: 600px) {
+        .reason-grid { grid-template-columns: repeat(2, 1fr); }
+        .duration-group { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+
+<form method="post" class="tablet-form" id="downtimeForm">
+    {% csrf_token %}
+    <input type="hidden" name="reason_category" id="reasonInput">
+
+    <!-- انتخاب ماشین -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین متوقف‌شده</div>
+        <select name="machine" class="form-select" required>
+            <option value="">انتخاب کنید...</option>
+            {% for m in all_machines %}
+            <option value="{{ m.id }}">
+                {{ m.code }} — {{ m.name }} ({{ m.get_machine_type_display }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- دلیل توقف -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-help-circle"></i> دلیل توقف</div>
+        <div class="reason-grid">
+            <div class="reason-card" data-cat="mechanical" onclick="selectReason(this)">
+                <i class="ti ti-tool"></i>
+                <span>مکانیکی</span>
+            </div>
+            <div class="reason-card" data-cat="electrical" onclick="selectReason(this)">
+                <i class="ti ti-bolt"></i>
+                <span>برقی</span>
+            </div>
+            <div class="reason-card" data-cat="material" onclick="selectReason(this)">
+                <i class="ti ti-package"></i>
+                <span>کمبود مواد</span>
+            </div>
+            <div class="reason-card" data-cat="operator" onclick="selectReason(this)">
+                <i class="ti ti-user"></i>
+                <span>اپراتور</span>
+            </div>
+            <div class="reason-card" data-cat="quality" onclick="selectReason(this)">
+                <i class="ti ti-eye-check"></i>
+                <span>مشکل کیفی</span>
+            </div>
+            <div class="reason-card" data-cat="planned" onclick="selectReason(this)">
+                <i class="ti ti-calendar-check"></i>
+                <span>سرویس برنامه‌ریزی</span>
+            </div>
+            <div class="reason-card" data-cat="other" onclick="selectReason(this)" style="grid-column: 1/-1;">
+                <i class="ti ti-dots"></i>
+                <span>سایر</span>
+            </div>
+        </div>
+
+        <!-- هشدار دستور کار خودکار -->
+        <div class="alert-auto" id="autoWoAlert">
+            <i class="ti ti-alert-circle" style="font-size:1.3rem; flex-shrink:0;"></i>
+            دستور کار تعمیر به صورت خودکار برای تیم نگهداری صادر می‌شود.
+        </div>
+
+        <!-- توضیح جزئیات -->
+        <div style="margin-top:16px;">
+            <label class="form-label">توضیح مختصر (اختیاری)</label>
+            <input type="text" name="reason_detail" class="form-control"
+                   placeholder="مثال: خرابی بلبرینگ، کمبود پلی‌استر، قطعی برق..."
+                   style="min-height:52px;">
+        </div>
+    </div>
+
+    <!-- مدت توقف -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-clock"></i> مدت توقف</div>
+
+        <div class="duration-group">
+            <button type="button" class="dur-btn" onclick="setDur(15)">۱۵ دقیقه</button>
+            <button type="button" class="dur-btn" onclick="setDur(30)">۳۰ دقیقه</button>
+            <button type="button" class="dur-btn" onclick="setDur(60)">۱ ساعت</button>
+            <button type="button" class="dur-btn" onclick="setDur(120)">۲ ساعت</button>
+        </div>
+
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">مدت دقیق (دقیقه)</label>
+                <input type="number" name="duration_min" id="durationInput"
+                       class="form-control" placeholder="مثلاً ۴۵" min="1">
+            </div>
+            <div>
+                <label class="form-label">ساعت شروع توقف</label>
+                <input type="time" name="start_time" class="form-control"
+                       id="startTimeInput">
+            </div>
+        </div>
+    </div>
+
+    <!-- تولید از دست رفته -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-chart-area-filled"></i> تأثیر بر تولید (اختیاری)</div>
+        <div>
+            <label class="form-label">تولید از دست رفته (کیلوگرم)</label>
+            <input type="number" name="production_loss" class="form-control"
+                   placeholder="تخمین کیلوگرمی که تولید نشد" step="0.1" min="0">
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="توضیحات بیشتر برای تیم نگهداری..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn flex-fill"
+                id="submitBtn"
+                style="background:linear-gradient(135deg,#ef4444,#dc2626); color:white;
+                       box-shadow:0 4px 15px rgba(239,68,68,0.3);">
+            <i class="ti ti-alert-triangle"></i> ثبت توقف
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// پر کردن ساعت جاری
+(function(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('startTimeInput').value = h + ':' + m;
+})();
+
+// انتخاب دلیل
+function selectReason(card) {
+    document.querySelectorAll('.reason-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    const cat = card.dataset.cat;
+    document.getElementById('reasonInput').value = cat;
+
+    // هشدار دستور کار خودکار
+    const alert = document.getElementById('autoWoAlert');
+    if (cat === 'mechanical' || cat === 'electrical') {
+        alert.classList.add('show');
+    } else {
+        alert.classList.remove('show');
+    }
+}
+
+// تنظیم مدت سریع
+function setDur(min) {
+    document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('durationInput').value = min;
+}
+
+// validation
+document.getElementById('downtimeForm').addEventListener('submit', function(e){
+    if (!document.getElementById('reasonInput').value) {
+        e.preventDefault();
+        alert('لطفاً دلیل توقف را انتخاب کنید');
+        return;
+    }
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

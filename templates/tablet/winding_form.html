@@ -1,0 +1,308 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت بوبین‌پیچی{% endblock %}
+{% block header_icon %}rotate-2{% endblock %}
+{% block header_title %}ثبت تولید بوبین‌پیچی{% endblock %}
+
+{% block content %}
+<style>
+    /* تم: آبی‌فیروزه‌ای */
+    :root {
+        --wd-main: #0891b2;
+        --wd-light: #cffafe;
+        --wd-grad: linear-gradient(135deg, #06b6d4, #0891b2);
+        --wd-shadow: rgba(6, 182, 212, 0.3);
+    }
+
+    .wd-header-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--wd-grad);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 16px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px var(--wd-shadow);
+    }
+
+    /* کارت‌ها */
+    .tablet-card-title i { color: var(--wd-main) !important; }
+
+    /* دکمه submit */
+    .tablet-btn-wd {
+        background: var(--wd-grad);
+        color: white;
+        box-shadow: 0 4px 15px var(--wd-shadow);
+    }
+    .tablet-btn-wd:hover {
+        background: linear-gradient(135deg, #0891b2, #0e7490);
+        color: white;
+        box-shadow: 0 6px 20px var(--wd-shadow);
+    }
+
+    /* برش‌های Yarn Clearer */
+    .cuts-display {
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        border: 2px solid #86efac;
+        border-radius: 16px;
+        padding: 18px;
+        text-align: center;
+        margin-top: 12px;
+    }
+    .cuts-display.warn { background: linear-gradient(135deg, #fefce8, #fef9c3); border-color: #fde047; }
+    .cuts-display.danger { background: linear-gradient(135deg, #fff1f2, #ffe4e6); border-color: #fca5a5; }
+    .cuts-val { font-size: 2.2rem; font-weight: 800; color: #16a34a; line-height: 1; }
+    .cuts-display.warn .cuts-val { color: #ca8a04; }
+    .cuts-display.danger .cuts-val { color: #dc2626; }
+    .cuts-grade { font-size: 0.85rem; color: #64748b; margin-top: 4px; font-weight: 600; }
+
+    /* شمارنده */
+    .counter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #f0f9ff;
+        border: 2px solid #bae6fd;
+        border-radius: 14px;
+        padding: 14px 18px;
+    }
+    .counter-btn {
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        border: 2px solid #e2e8f0;
+        background: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700;
+        transition: all 0.15s;
+        flex-shrink: 0;
+    }
+    .counter-btn:active { transform: scale(0.9); }
+    .counter-btn.minus { color: #ef4444; border-color: #fca5a5; }
+    .counter-btn.minus:hover { background: #fee2e2; }
+    .counter-btn.plus  { color: var(--wd-main); border-color: #a5f3fc; }
+    .counter-btn.plus:hover { background: var(--wd-light); }
+    .counter-val { flex: 1; text-align: center; font-size: 2rem; font-weight: 800; color: var(--wd-main); }
+    .counter-val.zero { color: #64748b; }
+    .counter-label { font-size: 0.8rem; color: #64748b; font-weight: 600; text-align: center; }
+
+    /* وزن */
+    .weight-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .weight-box {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px; text-align: center;
+    }
+    .weight-box label { font-size: 0.8rem; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 8px; }
+    .weight-box input {
+        width: 100%; border: none; background: transparent;
+        font-size: 1.3rem; font-weight: 700; text-align: center; color: #1e293b; outline: none;
+    }
+    .weight-box input:focus { color: var(--wd-main); }
+    .weight-box.primary { border-color: var(--wd-main); background: #ecfeff; }
+
+    /* راهنما */
+    .quick-hint {
+        background: #f0f9ff; border-right: 4px solid #38bdf8;
+        border-radius: 10px; padding: 12px 16px;
+        font-size: 0.85rem; color: #0369a1;
+        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: #0ea5e9; }
+
+    .d-none { display: none; }
+</style>
+
+<form method="post" id="windingForm">
+    {% csrf_token %}
+
+    <div class="wd-header-badge">
+        <i class="ti ti-rotate-2"></i> بوبین‌پیچی — کن (WD)
+    </div>
+
+    <div class="quick-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>انتقال نخ رینگ (Cop) به بوبین‌های بزرگ (Cone). کیفیت نخ از طریق Yarn Clearer کنترل می‌شود.</span>
+    </div>
+
+    <!-- ماشین + ورودی رینگ -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین و ورودی</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین بوبین‌پیچی <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">بچ رینگ ورودی</label>
+                <select name="spinning_production" class="form-select">
+                    <option value="">انتخاب (اختیاری)...</option>
+                    {% for s in spinning_batches %}
+                    <option value="{{ s.id }}">
+                        {{ s.batch_number }}{% if s.output_weight %} — {{ s.output_weight }} kg{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="tablet-grid" style="margin-top:12px;">
+            <div>
+                <label class="form-label">تعداد Cop ورودی</label>
+                <input type="number" name="input_cops" class="form-control"
+                       placeholder="تعداد بوبین کوچک" min="0">
+            </div>
+            <div>
+                <label class="form-label">نوع بوبین خروجی</label>
+                <select name="package_type" class="form-select">
+                    <option value="cone">کُن (Cone)</option>
+                    <option value="cheese">چیز (Cheese)</option>
+                    <option value="spool">اسپول (Spool)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- وزن -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scale"></i> وزن تولید</div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>ورودی (kg) <span class="text-danger">*</span></label>
+                <input type="number" name="input_weight" id="inWeight"
+                       placeholder="۰.۰" step="0.1" min="0" required oninput="calcWaste()">
+            </div>
+            <div class="weight-box">
+                <label>خروجی (kg)</label>
+                <input type="number" name="output_weight" id="outWeight"
+                       placeholder="۰.۰" step="0.1" min="0" oninput="calcWaste()">
+            </div>
+        </div>
+        <div class="tablet-grid" style="margin-top:10px;">
+            <div>
+                <label class="form-label">تعداد بوبین خروجی</label>
+                <input type="number" name="output_packages" class="form-control"
+                       placeholder="۰" min="0">
+            </div>
+            <div>
+                <label class="form-label">سرعت (m/min)</label>
+                <input type="number" name="winding_speed_mpm" class="form-control"
+                       placeholder="۱۲۰۰" min="0" step="50">
+            </div>
+        </div>
+        <div id="wasteInfo" style="display:none; margin-top:12px; padding:10px 16px;
+             background:#fff7f0; border-radius:10px; border-right:4px solid #f97316;
+             font-size:0.9rem; color:#c2410c; font-weight:600;">
+            <i class="ti ti-trash"></i> ضایعات تخمینی: <span id="wasteVal">—</span> kg
+        </div>
+    </div>
+
+    <!-- شمارنده برش Yarn Clearer -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scissors"></i> برش‌های Yarn Clearer</div>
+        <p style="font-size:0.85rem; color:#64748b; margin-bottom:14px;">
+            هر برش = یک نقص در نخ. کمتر از ۲۰ = خوب | بیشتر از ۵۰ = مشکل
+        </p>
+        <div class="counter-row">
+            <button type="button" class="counter-btn minus" onclick="changeCuts(-1)">−</button>
+            <div>
+                <div class="counter-val zero" id="cutsVal">۰</div>
+                <div class="counter-label">برش در ۱۰۰ کیلومتر</div>
+            </div>
+            <button type="button" class="counter-btn plus" onclick="changeCuts(1)">+</button>
+            <input type="hidden" name="cuts_per_100km" id="cutsInput" value="0">
+        </div>
+        <div class="cuts-display" id="cutsDisplay">
+            <div class="cuts-val" id="cutsGradeVal">—</div>
+            <div class="cuts-grade" id="cutsGradeLabel">کیفیت سنجیده نشده</div>
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="مشکلات غیرعادی، تغییر تنظیمات، یا هر نکته دیگری..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-wd flex-fill" id="submitBtn">
+            <i class="ti ti-check"></i> ثبت بوبین‌پیچی
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── ضایعات خودکار
+function calcWaste() {
+    const inW = parseFloat(document.getElementById('inWeight').value);
+    const outW = parseFloat(document.getElementById('outWeight').value);
+    const info = document.getElementById('wasteInfo');
+    if (inW > 0 && outW > 0 && inW >= outW) {
+        document.getElementById('wasteVal').textContent = (inW - outW).toFixed(1);
+        info.style.display = 'block';
+    } else {
+        info.style.display = 'none';
+    }
+}
+
+// ── شمارنده برش
+let cutsCount = 0;
+function changeCuts(delta) {
+    cutsCount = Math.max(0, cutsCount + delta);
+    document.getElementById('cutsVal').textContent = cutsCount.toLocaleString('fa-IR');
+    document.getElementById('cutsInput').value = cutsCount;
+
+    const disp = document.getElementById('cutsDisplay');
+    const gradeVal = document.getElementById('cutsGradeVal');
+    const gradeLbl = document.getElementById('cutsGradeLabel');
+
+    disp.className = 'cuts-display';
+    if (cutsCount === 0) {
+        gradeVal.textContent = '—';
+        gradeLbl.textContent = 'کیفیت سنجیده نشده';
+        document.getElementById('cutsVal').className = 'counter-val zero';
+    } else if (cutsCount < 20) {
+        gradeVal.textContent = 'A — عالی';
+        gradeLbl.textContent = 'کیفیت نخ و الیاف بسیار خوب';
+        document.getElementById('cutsVal').className = 'counter-val';
+    } else if (cutsCount < 40) {
+        disp.classList.add('warn');
+        gradeVal.textContent = 'B — خوب';
+        gradeLbl.textContent = 'قابل قبول';
+        document.getElementById('cutsVal').className = 'counter-val';
+    } else if (cutsCount < 60) {
+        disp.classList.add('warn');
+        gradeVal.textContent = 'C — متوسط';
+        gradeLbl.textContent = 'بررسی الیاف ورودی توصیه می‌شود';
+        document.getElementById('cutsVal').className = 'counter-val';
+    } else {
+        disp.classList.add('danger');
+        gradeVal.textContent = 'D — ضعیف';
+        gradeLbl.textContent = '⚠ مشکل جدی — با سرپرست مشورت کنید';
+        document.getElementById('cutsVal').className = 'counter-val';
+    }
+}
+
+// ── جلوگیری از ثبت دوباره
+document.getElementById('windingForm').addEventListener('submit', function(){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

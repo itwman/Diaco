@@ -1,0 +1,697 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}مانیتورینگ خطوط تولید | دیاکو MES{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════════════════
+   DIACO LINE MONITOR — سازگار با Kayo Admin Template
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Header ── */
+.mon-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+    color: #065f46;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.mon-live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: mon-blink 1.2s infinite;
+}
+@keyframes mon-blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.mon-refresh-info {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* ── Global KPIs ── */
+.mon-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+@media(max-width: 768px){ .mon-kpi-row { grid-template-columns: repeat(2,1fr); } }
+
+.mon-kpi-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.mon-kpi-val {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    font-family: 'Vazirmatn', sans-serif;
+}
+.mon-kpi-label {
+    color: #6c757d;
+    font-size: 0.78rem;
+    margin-top: 6px;
+}
+
+/* ── Line Card ── */
+.mon-line-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.mon-line-card.lc-active     { border-top: 3px solid #22c55e; }
+.mon-line-card.lc-inactive   { border-top: 3px solid #9ca3af; opacity: .85; }
+.mon-line-card.lc-maintenance{ border-top: 3px solid #f59e0b; }
+
+/* ── Line Header ── */
+.mon-line-hdr {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+.lc-active   .mon-line-hdr { background: #f0fdf4; }
+.lc-maintenance .mon-line-hdr { background: #fffbeb; }
+
+.mon-line-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+.mon-status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.msd-active     { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.2); }
+.msd-inactive   { background: #9ca3af; }
+.msd-maintenance{ background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
+
+/* ── PIPELINE SCHEMATIC ── */
+.mon-pipeline-wrap {
+    padding: 28px 20px 16px;
+    overflow-x: auto;
+}
+.mon-pipeline {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: row-reverse; /* RTL */
+    gap: 0;
+    min-width: 900px;
+    position: relative;
+}
+
+/* هر گره */
+.mon-node {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    min-width: 95px;
+}
+
+/* خط اتصال */
+.mon-node:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: 34px;
+    right: 50%;
+    width: calc(100% - 68px);
+    height: 2px;
+    background: #dee2e6;
+    z-index: 0;
+    transform: translateX(-34px);
+    transition: background .5s;
+}
+.mon-node.mn-active:not(:first-child)::before,
+.mon-node.mn-completed:not(:first-child)::before {
+    background: linear-gradient(to left, var(--nc, #22c55e), rgba(200,200,200,.4));
+}
+
+/* دایره اصلی */
+.mon-circle {
+    width: 68px; height: 68px;
+    border-radius: 50%;
+    border: 2px solid #dee2e6;
+    background: #f8f9fa;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+    cursor: pointer;
+    transition: transform .25s, box-shadow .25s;
+    flex-shrink: 0;
+}
+.mon-circle i { font-size: 1.4rem; color: #adb5bd; }
+.mon-circle:hover { transform: scale(1.1); box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+
+/* وضعیت‌ها */
+.mn-idle     .mon-circle { border-color: #dee2e6; background: #f8f9fa; }
+.mn-idle     .mon-circle i { color: #adb5bd; }
+
+.mn-active   .mon-circle {
+    border-color: var(--nc, #22c55e);
+    background: color-mix(in srgb, var(--nc,#22c55e) 12%, #fff);
+    animation: mon-pulse 2.2s infinite;
+}
+.mn-active   .mon-circle i { color: var(--nc, #22c55e); }
+
+.mn-completed .mon-circle {
+    border-color: var(--nc, #6c757d);
+    background: color-mix(in srgb, var(--nc,#6c757d) 8%, #fff);
+}
+.mn-completed .mon-circle i { color: var(--nc, #6c757d); }
+
+.mn-quality_hold .mon-circle {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    animation: mon-pulse-warn 2.2s infinite;
+}
+.mn-quality_hold .mon-circle i { color: #d97706; }
+
+@keyframes mon-pulse {
+    0%   { box-shadow: 0 0 0 0   color-mix(in srgb, var(--nc,#22c55e) 50%, transparent); }
+    70%  { box-shadow: 0 0 0 10px transparent; }
+    100% { box-shadow: 0 0 0 0   transparent; }
+}
+@keyframes mon-pulse-warn {
+    0%   { box-shadow: 0 0 0 0 rgba(245,158,11,.4); }
+    70%  { box-shadow: 0 0 0 10px transparent; }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* نشانه‌گر زنده */
+.mon-live-ind {
+    position: absolute;
+    top: 1px; right: 1px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 2px solid #fff;
+    animation: mon-blink 1s infinite;
+}
+
+/* شماره مرحله */
+.mon-node-num {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e9ecef;
+    color: #6c757d;
+    font-size: 0.6rem;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    z-index: 2;
+}
+
+/* برچسب */
+.mon-node-label {
+    margin-top: 9px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #343a40;
+    text-align: center;
+    white-space: nowrap;
+}
+.mon-node-sub {
+    font-size: 0.66rem;
+    color: #adb5bd;
+    text-align: center;
+    margin-top: 2px;
+}
+
+/* ── Tooltip (global fixed — خارج از overflow) ── */
+#mon-global-tooltip {
+    display: none;
+    position: fixed;
+    min-width: 220px;
+    max-width: 270px;
+    background: #1e293b;
+    color: #f1f5f9;
+    border-radius: 10px;
+    padding: 13px 16px;
+    z-index: 99999;
+    box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    pointer-events: none;
+    font-size: 0.78rem;
+    direction: rtl;
+    transition: opacity .15s;
+}
+
+.mon-tt-title {
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+    padding-bottom: 7px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+}
+.mon-tt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    gap: 12px;
+}
+.mon-tt-row:last-child { border: none; }
+.mon-tt-key { color: #94a3b8; font-size: .75rem; white-space: nowrap; }
+.mon-tt-val { color: #f1f5f9; font-weight: 600; font-size: .78rem; white-space: nowrap; }
+
+.mon-badge {
+    padding: 1px 7px;
+    border-radius: 5px;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+.mb-active { background: rgba(34,197,94,.25); color: #4ade80; }
+.mb-done   { background: rgba(148,163,184,.2); color: #cbd5e1; }
+.mb-hold   { background: rgba(245,158,11,.25); color: #fbbf24; }
+.mb-idle   { background: rgba(100,116,139,.2); color: #94a3b8; }
+.mb-pass   { background: rgba(34,197,94,.25); color: #4ade80; }
+.mb-fail   { background: rgba(239,68,68,.25); color: #f87171; }
+
+/* ── Legend ── */
+.mon-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+    color: #6c757d;
+    padding: 0 20px 12px;
+}
+.mon-legend-dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    margin-left: 4px;
+}
+
+/* ── Stats Strip ── */
+.mon-stats-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+.mon-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.74rem;
+    color: #495057;
+}
+.mon-stat-chip i { font-size: 0.85rem; }
+.mon-stat-chip .msv { font-weight: 700; color: #212529; }
+
+/* ── Capacity Bar ── */
+.mon-cap-section {
+    padding: 10px 20px 14px;
+    border-top: 1px solid #e9ecef;
+}
+.mon-cap-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+.mon-cap-bg {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.mon-cap-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1.2s ease;
+}
+.mcf-low  { background: linear-gradient(90deg,#dc2626,#ef4444); }
+.mcf-mid  { background: linear-gradient(90deg,#d97706,#f59e0b); }
+.mcf-good { background: linear-gradient(90deg,#059669,#10b981); }
+.mcf-full { background: linear-gradient(90deg,#0284c7,#38bdf8); }
+
+/* ── Empty / Loading ── */
+.mon-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #adb5bd;
+}
+.mon-empty i { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0">
+                    <i class="ti ti-activity-heartbeat text-primary me-2"></i>
+                    مانیتورینگ زنده خطوط تولید
+                </h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item active">مانیتورینگ خطوط</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Tooltip Global (fixed, outside overflow) -->
+    <div id="mon-global-tooltip"></div>
+
+    <!-- ── Header Bar ── -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <span class="mon-live-pill">
+                <span class="mon-live-dot"></span>
+                زنده
+            </span>
+            <span class="mon-refresh-info">
+                بروزرسانی تا <strong id="mon-countdown">30</strong> ثانیه
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary" id="mon-btn-refresh">
+                <i class="ti ti-refresh"></i> بروزرسانی
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="mon-btn-fs">
+                <i class="ti ti-maximize"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ── Global KPIs ── -->
+    <div class="mon-kpi-row" id="mon-kpis">
+        <div class="mon-kpi-card">
+            <i class="ti ti-building-factory mb-1" style="font-size:1.6rem;color:#22c55e"></i>
+            <div class="mon-kpi-val text-success" id="mon-kpi-lines">—</div>
+            <div class="mon-kpi-label">خط فعال</div>
+        </div>
+        <div class="mon-kpi-card">
+            <i class="ti ti-fidget-spinner mb-1" style="font-size:1.6rem;color:#3b82f6"></i>
+            <div class="mon-kpi-val text-primary" id="mon-kpi-batches">—</div>
+            <div class="mon-kpi-label">بچ در جریان</div>
+        </div>
+        <div class="mon-kpi-card">
+            <i class="ti ti-engine mb-1" style="font-size:1.6rem;color:#06b6d4"></i>
+            <div class="mon-kpi-val text-info" id="mon-kpi-machines">—</div>
+            <div class="mon-kpi-label">ماشین فعال</div>
+        </div>
+        <div class="mon-kpi-card">
+            <i class="ti ti-cylinder mb-1" style="font-size:1.6rem;color:#f59e0b"></i>
+            <div class="mon-kpi-val text-warning" id="mon-kpi-output">—</div>
+            <div class="mon-kpi-label">تولید امروز (kg)</div>
+        </div>
+    </div>
+
+    <!-- ── Lines Container ── -->
+    <div id="mon-lines">
+        <div class="mon-empty">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3 text-muted">در حال بارگذاری خطوط تولید...</p>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+'use strict';
+
+const API = '{% url "dashboard:line_monitor_api" %}';
+const INTERVAL = 30;
+let cd = INTERVAL;
+
+// tooltip listeners — یک بار bind
+initTooltip();
+
+// بارگذاری اولیه
+load();
+
+// تایمر
+const timer = setInterval(()=>{
+    cd--;
+    document.getElementById('mon-countdown').textContent = cd;
+    if(cd <= 0){ cd = INTERVAL; load(); }
+}, 1000);
+
+document.getElementById('mon-btn-refresh').onclick = ()=>{ cd=INTERVAL; load(); };
+document.getElementById('mon-btn-fs').onclick = ()=>{
+    const el = document.querySelector('.pc-container') || document.body;
+    if(el.requestFullscreen) el.requestFullscreen();
+};
+
+function load(){
+    fetch(API, { headers:{'X-Requested-With':'XMLHttpRequest'} })
+        .then(r => r.json())
+        .then(d => { renderKPIs(d.lines); renderLines(d.lines); document.getElementById('mon-countdown').textContent = INTERVAL; cd = INTERVAL; })
+        .catch(() => {
+            document.getElementById('mon-lines').innerHTML =
+                '<div class="mon-empty"><i class="ti ti-wifi-off text-danger"></i><p>خطا در اتصال به سرور</p></div>';
+        });
+}
+
+/* ── KPIs ── */
+function renderKPIs(lines){
+    let al=0, ab=0, am=0, ao=0;
+    lines.forEach(l=>{
+        if(l.status === 'active') al++;
+        ab += l.today_production.active_batches;
+        am += l.machines.active;
+        ao += l.today_production.total_output_kg;
+    });
+    document.getElementById('mon-kpi-lines').textContent   = al;
+    document.getElementById('mon-kpi-batches').textContent = ab;
+    document.getElementById('mon-kpi-machines').textContent = am;
+    document.getElementById('mon-kpi-output').textContent  = ao.toLocaleString('fa-IR',{maximumFractionDigits:0});
+}
+
+/* ── Lines ── */
+function renderLines(lines){
+    const c = document.getElementById('mon-lines');
+    if(!lines.length){
+        c.innerHTML = '<div class="mon-empty"><i class="ti ti-database-off"></i><p>خط تولیدی تعریف نشده است</p></div>';
+        return;
+    }
+    c.innerHTML = lines.map(lineCard).join('');
+}
+
+/* ── Line Card ── */
+function lineCard(line){
+    const lcClass = { active:'lc-active', inactive:'lc-inactive', maintenance:'lc-maintenance' }[line.status] || 'lc-inactive';
+    const dotClass = { active:'msd-active', inactive:'msd-inactive', maintenance:'msd-maintenance' }[line.status] || 'msd-inactive';
+    const p = line.today_production;
+    const cap = line.capacity_pct || 0;
+    const cfClass = cap>=80 ? 'mcf-full' : cap>=50 ? 'mcf-good' : cap>=25 ? 'mcf-mid' : 'mcf-low';
+
+    return `
+<div class="mon-line-card ${lcClass}">
+
+  <!-- Header -->
+  <div class="mon-line-hdr">
+    <h5 class="mon-line-title">
+      <span class="mon-status-dot ${dotClass}"></span>
+      <i class="ti ti-building-factory text-muted"></i>
+      ${line.name}
+      <small class="text-muted fw-normal">(${line.code})</small>
+    </h5>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      ${p.active_batches > 0 ? `<span class="badge bg-primary">${p.active_batches} بچ فعال</span>` : ''}
+      <small class="text-muted">
+        ${line.machines.active} ماشین فعال
+        ${line.machines.maintenance > 0 ? `· <span class="text-warning fw-bold">${line.machines.maintenance} تعمیری</span>` : ''}
+      </small>
+    </div>
+  </div>
+
+  <!-- Pipeline Schematic -->
+  <div class="mon-pipeline-wrap">
+    <div class="mon-pipeline">
+      ${line.stages.map((s,i) => nodeHtml(s, i+1)).join('')}
+    </div>
+
+    <!-- راهنمای رنگ -->
+    <div class="mon-legend mt-2">
+      <span><span class="mon-legend-dot" style="background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.2)"></span>فعال / در جریان</span>
+      <span><span class="mon-legend-dot" style="background:#6c757d"></span>تکمیل شده</span>
+      <span><span class="mon-legend-dot" style="background:#f59e0b"></span>توقف کیفی</span>
+      <span><span class="mon-legend-dot" style="background:#dee2e6;border:1px solid #ced4da"></span>بدون تولید</span>
+    </div>
+  </div>
+
+  <!-- Stats Chips -->
+  <div class="mon-stats-strip">
+    ${chip('ti-tornado',        '#6366f1', 'حلاجی',      p.blowroom_count, p.blowroom_kg)}
+    ${chip('ti-fidget-spinner',  '#ef4444', 'رینگ',       p.spinning_count, p.spinning_kg)}
+    ${chip('ti-cylinder',        '#f97316', 'بوبین‌پیچی', p.winding_count,  p.winding_kg)}
+    ${chip('ti-infinity',        '#eab308', 'دولاتابی',   p.tfo_count,      p.tfo_kg)}
+    ${chip('ti-flame',           '#f43f5e', 'هیت‌ست',     p.heatset_count,  p.heatset_kg)}
+    ${chip('ti-droplet-filled',  '#06b6d4', 'رنگرزی',     p.dyeing_count,   p.dyeing_kg)}
+  </div>
+
+  <!-- Capacity -->
+  <div class="mon-cap-section">
+    <div class="mon-cap-label">
+      <span>ظرفیت تولید امروز</span>
+      <strong>${cap}%${line.target_capacity_kg > 0 ? ' از ' + Math.round(line.target_capacity_kg).toLocaleString('fa-IR') + ' kg' : ''}</strong>
+    </div>
+    <div class="mon-cap-bg">
+      <div class="mon-cap-fill ${cfClass}" style="width:${Math.max(cap,1)}%"></div>
+    </div>
+  </div>
+
+</div>`;
+}
+
+function chip(icon, color, label, count, kg){
+    return `<div class="mon-stat-chip">
+      <i class="ti ${icon}" style="color:${color}"></i>
+      <span>${label}:</span>
+      <span class="msv">${count}</span>
+      <span class="text-muted">(${Math.round(kg)} kg)</span>
+    </div>`;
+}
+
+/* ── Stage Node ── */
+function nodeHtml(s, num){
+    let mnClass = 'mn-idle';
+    if(s.has_data){
+        if(s.active_now) mnClass = 'mn-active';
+        else if(s.last_status === 'quality_hold') mnClass = 'mn-quality_hold';
+        else mnClass = 'mn-completed';
+    }
+
+    const liveInd = s.active_now ? '<span class="mon-live-ind"></span>' : '';
+
+    // ساخت HTML تولتیپ به صورت data-* روی node
+    const badge = statusBadge(s.last_status, s.active_now);
+    let extraRows = '';
+    const ex = s.extra || {};
+    if(ex.temp != null)       extraRows += ttRow('دما', ex.temp + '°C');
+    if(ex.speed != null)      extraRows += ttRow('سرعت', ex.speed + ' m/min');
+    if(ex.tpm != null)        extraRows += ttRow('تاب (TPM)', ex.tpm);
+    if(ex.efficiency != null) extraRows += ttRow('راندمان', ex.efficiency + '%');
+    if(s.quality){
+        const qb = s.quality === 'pass'
+            ? '<span class="mon-badge mb-pass">قبول ✓</span>'
+            : '<span class="mon-badge mb-fail">رد ✗</span>';
+        extraRows += `<div class="mon-tt-row"><span class="mon-tt-key">کیفیت</span><span class="mon-tt-val">${qb}</span></div>`;
+    }
+
+    const tooltipHtml = `
+      <div class="mon-tt-title" style="color:${s.color}"><i class="${s.icon}"></i> ${s.name}</div>
+      ${ttRow('وضعیت', badge)}
+      ${ttRow('آخرین بچ', s.last_batch)}
+      ${s.machine_code !== '-' ? ttRow('ماشین', s.machine_code) : ''}
+      ${s.last_date !== '-' ? ttRow('تاریخ', s.last_date) : ''}
+      ${extraRows}`;
+
+    // encode برای data attribute
+    const ttData = encodeURIComponent(tooltipHtml);
+
+    return `
+<div class="mon-node ${mnClass}" style="--nc:${s.color}" data-tt="${ttData}">
+  <div class="mon-node-num">${num}</div>
+  <div class="mon-circle">
+    ${liveInd}
+    <i class="${s.icon}"></i>
+  </div>
+  <div class="mon-node-label">${s.name}</div>
+  <div class="mon-node-sub">${s.machine_code !== '-' ? s.machine_code : ''}</div>
+</div>`;
+}
+
+/* ── Tooltip ── */
+const gtt = document.getElementById('mon-global-tooltip');
+
+function initTooltip(){
+    document.addEventListener('mousemove', function(e){
+        const node = e.target.closest('.mon-node[data-tt]');
+        if(!node){ gtt.style.display = 'none'; return; }
+        // اگر محتوا عوض شده آن را بارگذاری کن
+        if(gtt._node !== node){
+            gtt._node = node;
+            gtt.innerHTML = decodeURIComponent(node.dataset.tt);
+        }
+        gtt.style.display = 'block';
+        positionTooltip(e);
+    });
+}
+
+function positionTooltip(e){
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const tw = gtt.offsetWidth  || 230;
+    const th = gtt.offsetHeight || 190;
+    let left = e.clientX - tw / 2;
+    let top  = e.clientY + 18;
+    if(left + tw > vw - 10) left = vw - tw - 10;
+    if(left < 10) left = 10;
+    if(top + th > vh - 10) top = e.clientY - th - 14;
+    gtt.style.left = left + 'px';
+    gtt.style.top  = top  + 'px';
+}
+
+function statusBadge(status, isActive){
+    if(isActive) return '<span class="mon-badge mb-active">● در جریان</span>';
+    const map = {
+        in_progress:   '<span class="mon-badge mb-done">در جریان</span>',
+        completed:     '<span class="mon-badge mb-done">تکمیل ✓</span>',
+        quality_hold:  '<span class="mon-badge mb-hold">توقف کیفی ⚠</span>',
+        processing:    '<span class="mon-badge mb-active">در فرآیند</span>',
+        loading:       '<span class="mon-badge mb-active">بارگذاری</span>',
+        cooling:       '<span class="mon-badge mb-active">سردشدن</span>',
+        idle:          '<span class="mon-badge mb-idle">بدون تولید</span>',
+        cancelled:     '<span class="mon-badge mb-idle">لغو شده</span>',
+    };
+    return map[status] || `<span class="mon-badge mb-idle">${status}</span>`;
+}
+
+function ttRow(key, val){
+    return `<div class="mon-tt-row"><span class="mon-tt-key">${key}</span><span class="mon-tt-val">${val}</span></div>`;
+}
+
+})();
+</script>
+{% endblock %}

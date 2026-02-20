@@ -1,0 +1,414 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود | دیاکو MES</title>
+    
+    <!-- فونت وزیرمتن -->
+    <link href="{% static 'fonts/vazir/Farsi-Digits/Vazirmatn-FD-font-face.css' %}" rel="stylesheet">
+    
+    <!-- Bootstrap RTL -->
+    <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+    
+    <!-- Tabler Icons -->
+    <link href="{% static 'vendor/tabler-icons/tabler-icons.css' %}" rel="stylesheet">
+    
+    <!-- استایل سفارشی -->
+    <style>
+        * {
+            font-family: 'Vazirmatn FD', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .login-container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .login-row {
+            display: flex;
+            min-height: 600px;
+        }
+        
+        .image-section {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+        }
+        
+        .image-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,101.3C1248,85,1344,75,1392,69.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat;
+            background-size: cover;
+            opacity: 0.2;
+        }
+        
+        .logo-section {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo-icon {
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            backdrop-filter: blur(10px);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+        
+        .logo-icon i {
+            font-size: 70px;
+            color: white;
+        }
+        
+        .logo-section h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .logo-section p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 15px;
+            margin-bottom: 50px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .feature-item i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .feature-item span {
+            font-size: 0.9rem;
+        }
+        
+        .form-section {
+            flex: 1;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .form-header {
+            margin-bottom: 40px;
+        }
+        
+        .form-header h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        
+        .form-header p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-wrapper i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 20px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px 14px 50px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .form-check input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .form-check label {
+            cursor: pointer;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .alert {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert i {
+            font-size: 20px;
+        }
+        
+        .footer-text {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 992px) {
+            .image-section {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .form-section {
+                padding: 40px 25px;
+            }
+            
+            .form-header h2 {
+                font-size: 1.8rem;
+            }
+            
+            .logo-section h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-row">
+                <!-- بخش تصویر -->
+                <div class="image-section">
+                    <div class="logo-section">
+                        <div class="logo-icon">
+                            <i class="ti ti-topology-star-3"></i>
+                        </div>
+                        <h1>دیاکو MES</h1>
+                        <p>سیستم مدیریت تولید نساجی</p>
+                    </div>
+                    
+                    <div class="features">
+                        <div class="feature-item">
+                            <i class="ti ti-chart-line"></i>
+                            <span>نظارت لحظه‌ای</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="ti ti-topology-ring"></i>
+                            <span>مدیریت تولید</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="ti ti-report-analytics"></i>
+                            <span>گزارش‌گیری</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="ti ti-device-mobile"></i>
+                            <span>دسترسی موبایل</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- بخش فرم -->
+                <div class="form-section">
+                    <div class="form-header">
+                        <h2>خوش آمدید!</h2>
+                        <p>برای ورود به سیستم مشخصات خود را وارد کنید</p>
+                    </div>
+                    
+                    {% if form.errors %}
+                    <div class="alert">
+                        <i class="ti ti-alert-circle"></i>
+                        <span>نام کاربری یا رمز عبور اشتباه است</span>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'accounts:login' %}">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="username">نام کاربری</label>
+                            <div class="input-wrapper">
+                                <i class="ti ti-user"></i>
+                                <input type="text" 
+                                       name="username" 
+                                       id="username" 
+                                       class="form-control" 
+                                       placeholder="نام کاربری خود را وارد کنید"
+                                       value="{{ form.username.value|default:'' }}"
+                                       autofocus 
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">رمز عبور</label>
+                            <div class="input-wrapper">
+                                <i class="ti ti-lock"></i>
+                                <input type="password" 
+                                       name="password" 
+                                       id="password" 
+                                       class="form-control" 
+                                       placeholder="رمز عبور خود را وارد کنید"
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input type="checkbox" id="remember" name="remember">
+                            <label for="remember">مرا به خاطر بسپار</label>
+                        </div>
+                        
+                        <input type="hidden" name="next" value="{{ next }}">
+                        
+                        <button type="submit" class="btn-login">
+                            <i class="ti ti-login me-2"></i>
+                            ورود به سیستم
+                        </button>
+                    </form>
+                    
+                    <div class="footer-text">
+                        <p>© ۱۴۰۴ شرکت توسعه هوشمند فرش ایرانیان</p>
+                        <p style="margin-top: 8px;">پارک علم و فناوری کاشان</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        // افکت تایپ شدن برای عنوان
+        document.addEventListener('DOMContentLoaded', function() {
+            const formSection = document.querySelector('.form-section');
+            formSection.style.opacity = '0';
+            formSection.style.transform = 'translateX(-20px)';
+            
+            setTimeout(() => {
+                formSection.style.transition = 'all 0.6s ease';
+                formSection.style.opacity = '1';
+                formSection.style.transform = 'translateX(0)';
+            }, 200);
+        });
+    </script>
+</body>
+</html>

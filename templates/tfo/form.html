@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% load jalali_tags %}
+
+{% block title %}{{ page_title }} | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title"><h4 class="mb-0">{{ page_title }}</h4></div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item">{{ breadcrumb_parent }}</li>
+                    <li class="breadcrumb-item"><a href="{% url 'tfo:list' %}">لیست</a></li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        {% if error %}
+        <div class="alert alert-danger"><i class="ti ti-alert-circle me-2"></i>{{ error }}</div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            {# ── بخش ۱: اطلاعات پایه ─────────────────────────── #}
+            <div class="card mb-3">
+                <div class="card-header" style="background:rgba(139,92,246,.1);">
+                    <h6 class="mb-0" style="color:#7c3aed;"><i class="ti ti-info-circle me-2"></i>اطلاعات پایه</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شماره بچ</label>
+                            <input type="text" name="batch_number" class="form-control font-monospace"
+                                   value="{{ prod.batch_number|default:suggested_batch }}" dir="ltr">
+                            <div class="form-text">خالی = خودکار (TFO-…)</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">ماشین <span class="text-danger">*</span></label>
+                            <select name="machine" class="form-select" required>
+                                <option value="">— انتخاب —</option>
+                                {% for m in machines %}
+                                <option value="{{ m.id }}" {% if prod.machine_id == m.id %}selected{% endif %}>
+                                    {{ m.code }} — {{ m.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شیفت <span class="text-danger">*</span></label>
+                            <select name="shift" class="form-select" required>
+                                <option value="">— انتخاب —</option>
+                                {% for s in shifts %}
+                                <option value="{{ s.id }}" {% if prod.shift_id == s.id %}selected{% endif %}>
+                                    {{ s.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">تاریخ تولید <span class="text-danger">*</span></label>
+                            <input type="date" name="production_date" class="form-control"
+                                   value="{{ prod.production_date|default:today }}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">خط تولید</label>
+                            <select name="production_line" class="form-select">
+                                <option value="">— اختیاری —</option>
+                                {% for l in lines %}
+                                <option value="{{ l.id }}" {% if prod.production_line_id == l.id %}selected{% endif %}>
+                                    {{ l.code }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">سفارش</label>
+                            <select name="order" class="form-select">
+                                <option value="">— اختیاری —</option>
+                                {% for o in orders %}
+                                <option value="{{ o.id }}" {% if prod.order_id == o.id %}selected{% endif %}>
+                                    {{ o.order_number }} — {{ o.customer.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">بچ بوبین‌پیچی ورودی</label>
+                            <select name="winding_production" class="form-select">
+                                <option value="">— اختیاری —</option>
+                                {% for w in winding_batches %}
+                                <option value="{{ w.id }}" {% if prod.winding_production_id == w.id %}selected{% endif %}>
+                                    {{ w.batch_number }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── بخش ۲: پارامترهای تاب ──────────────────────── #}
+            <div class="card mb-3">
+                <div class="card-header" style="background:rgba(139,92,246,.07);">
+                    <h6 class="mb-0" style="color:#7c3aed;"><i class="ti ti-rotate-clockwise me-2"></i>پارامترهای تاب</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">تعداد لا</label>
+                            <input type="number" name="ply_count" class="form-control"
+                                   value="{{ prod.ply_count|default:2 }}" min="1" max="10">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">تاب (TPM) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" name="twist_tpm" class="form-control"
+                                       value="{{ prod.twist_tpm|default:'' }}" step="0.01" min="0" required>
+                                <span class="input-group-text">TPM</span>
+                            </div>
+                            <div class="form-text">معمولاً ۱۵۰–۴۰۰ TPM</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">جهت تاب</label>
+                            <div class="d-flex gap-2">
+                                {% for val, label in twist_direction_choices %}
+                                <label class="btn btn-sm flex-fill text-center
+                                    {% if val == 'S' %}btn-outline-info{% else %}btn-outline-warning{% endif %}
+                                    twist-dir-btn">
+                                    <input type="radio" name="twist_direction" value="{{ val }}" class="d-none"
+                                           {% if prod.twist_direction == val or not prod and val == 'S' %}checked{% endif %}>
+                                    {{ val }} — {{ label|truncatechars:5 }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">سرعت دوک (RPM)</label>
+                            <input type="number" name="spindle_speed_rpm" class="form-control"
+                                   value="{{ prod.spindle_speed_rpm|default:'' }}" min="0">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">تانسیون (g)</label>
+                            <div class="input-group">
+                                <input type="number" name="tension_weight_g" class="form-control"
+                                       value="{{ prod.tension_weight_g|default:'' }}" step="0.01" min="0">
+                                <span class="input-group-text">g</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="balloon_control"
+                                       id="balloonControl" {% if prod.balloon_control %}checked{% endif %}>
+                                <label class="form-check-label" for="balloonControl">کنترل بالون</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── بخش ۳: مشخصات نخ ──────────────────────────── #}
+            <div class="card mb-3">
+                <div class="card-header bg-light-secondary">
+                    <h6 class="mb-0"><i class="ti ti-line-dashed me-2"></i>مشخصات نخ</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">نمره نخ ورودی (Ne)</label>
+                            <input type="number" name="input_yarn_count_ne" class="form-control"
+                                   value="{{ prod.input_yarn_count_ne|default:'' }}" step="0.001" min="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">نمره نخ خروجی (Ne)</label>
+                            <input type="number" name="output_yarn_count_ne" class="form-control"
+                                   value="{{ prod.output_yarn_count_ne|default:'' }}" step="0.001" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── بخش ۴: تولید و کیفیت ──────────────────────── #}
+            <div class="card mb-3">
+                <div class="card-header bg-light-success">
+                    <h6 class="mb-0 text-success"><i class="ti ti-package-export me-2"></i>تولید و کیفیت</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">تعداد بوبین ورودی</label>
+                            <input type="number" name="input_packages" class="form-control"
+                                   value="{{ prod.input_packages|default:'' }}" min="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">وزن ورودی (kg)</label>
+                            <div class="input-group">
+                                <input type="number" name="input_weight_kg" class="form-control"
+                                       value="{{ prod.input_weight_kg|default:'' }}" step="0.001" min="0">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">تعداد بوبین خروجی</label>
+                            <input type="number" name="output_packages" class="form-control"
+                                   value="{{ prod.output_packages|default:'' }}" min="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">وزن خروجی (kg)</label>
+                            <div class="input-group">
+                                <input type="number" name="output_weight_kg" class="form-control"
+                                       value="{{ prod.output_weight_kg|default:'' }}" step="0.001" min="0">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">ضایعات (kg)</label>
+                            <div class="input-group">
+                                <input type="number" name="waste_weight_kg" class="form-control"
+                                       value="{{ prod.waste_weight_kg|default:'' }}" step="0.001" min="0">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">تعداد پارگی (AI)</label>
+                            <input type="number" name="breakage_count" class="form-control"
+                                   value="{{ prod.breakage_count|default:0 }}" min="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">راندمان (%)</label>
+                            <div class="input-group">
+                                <input type="number" name="efficiency_pct" class="form-control"
+                                       value="{{ prod.efficiency_pct|default:'' }}" step="0.01" min="0" max="100">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <label class="form-label fw-semibold">یادداشت</label>
+                    <textarea name="notes" class="form-control" rows="2">{{ prod.notes|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="{% if is_edit %}{% url 'tfo:detail' prod.pk %}{% else %}{% url 'tfo:list' %}{% endif %}"
+                   class="btn btn-outline-secondary">انصراف</a>
+                <button type="submit" class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;">
+                    <i class="ti ti-check me-1"></i>
+                    {% if is_edit %}ذخیره{% else %}ثبت بچ{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.twist-dir-btn').forEach(btn => {
+    const radio = btn.querySelector('input[type=radio]');
+    if (radio?.checked) btn.classList.add('active');
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.twist-dir-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+</script>
+{% endblock %}

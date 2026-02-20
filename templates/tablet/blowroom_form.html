@@ -1,0 +1,533 @@
+{% extends "tablet/base.html" %}
+{% block title %}ثبت حلاجی{% endblock %}
+{% block header_icon %}windmill{% endblock %}
+{% block header_title %}ثبت تولید حلاجی{% endblock %}
+
+{% block content %}
+<style>
+    /* راهنما */
+    .quick-hint {
+        background: #f0f9ff;
+        border-right: 4px solid #38bdf8;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+        color: #0369a1;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .quick-hint i { font-size: 1.2rem; color: #0ea5e9; }
+
+    /* وزن */
+    .weight-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+    }
+    .weight-box {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+    }
+    .weight-box label {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .weight-box input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+        color: #1e293b;
+        outline: none;
+    }
+    .weight-box input:focus { color: #667eea; }
+    .weight-box.primary { border-color: #667eea; background: #f5f3ff; }
+    .weight-box.auto { border-color: #f97316; background: #fff7f0; }
+    .weight-box.auto input { color: #c2410c; }
+
+    /* ردیف‌های الیاف */
+    .fiber-row {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 12px;
+        position: relative;
+        transition: all 0.2s;
+    }
+    .fiber-row:hover { border-color: #cbd5e1; }
+    .fiber-row.filled { border-color: #a78bfa; background: #faf5ff; }
+
+    .fiber-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .fiber-row-num {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .fiber-row-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #475569;
+        margin-right: 8px;
+        flex: 1;
+    }
+    .remove-fiber-btn {
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        font-weight: 700;
+    }
+    .remove-fiber-btn:hover { background: #fca5a5; }
+
+    .fiber-row-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 10px;
+        align-items: start;
+    }
+
+    /* درصد خودکار */
+    .pct-display {
+        background: #f0fdf4;
+        border: 2px solid #86efac;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+    }
+    .pct-display label {
+        font-size: 0.75rem;
+        color: #16a34a;
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .pct-display .pct-val {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #15803d;
+    }
+
+    /* دکمه افزودن الیاف */
+    .add-fiber-btn {
+        width: 100%;
+        min-height: 52px;
+        border: 2px dashed #a78bfa;
+        border-radius: 14px;
+        background: #f5f3ff;
+        color: #7c3aed;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+    .add-fiber-btn:hover { background: #ede9fe; border-color: #7c3aed; }
+
+    /* خلاصه مخلوط */
+    .blend-summary {
+        background: linear-gradient(135deg, #faf5ff, #f5f3ff);
+        border: 2px solid #c4b5fd;
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-top: 16px;
+        display: none;
+    }
+    .blend-summary-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #6d28d9;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .blend-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .blend-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+    }
+    .blend-bar-label { width: 80px; font-weight: 600; color: #374151; }
+    .blend-bar-track {
+        flex: 1;
+        height: 10px;
+        background: #e9d5ff;
+        border-radius: 99px;
+        overflow: hidden;
+    }
+    .blend-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #7c3aed, #a78bfa);
+        transition: width 0.3s;
+    }
+    .blend-bar-pct {
+        width: 40px;
+        text-align: left;
+        font-weight: 700;
+        color: #7c3aed;
+    }
+
+    /* مجموع کل */
+    .total-check {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #c4b5fd;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #374151;
+    }
+    .total-ok { color: #16a34a; }
+    .total-warn { color: #dc2626; }
+
+    .d-none { display: none; }
+    @media (max-width: 600px) {
+        .weight-group { grid-template-columns: 1fr 1fr; }
+        .fiber-row-grid { grid-template-columns: 1fr 1fr; }
+        .fiber-row-grid > *:first-child { grid-column: 1 / -1; }
+    }
+</style>
+
+<form method="post" class="tablet-form" id="blowroomForm">
+    {% csrf_token %}
+
+    <div class="quick-hint">
+        <i class="ti ti-info-circle"></i>
+        <span>الیاف مصرفی را از لیست انبار انتخاب کنید. درصد مخلوط خودکار محاسبه می‌شود.</span>
+    </div>
+
+    <!-- ماشین و سفارش -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-cpu"></i> ماشین و سفارش</div>
+        <div class="tablet-grid">
+            <div>
+                <label class="form-label">ماشین حلاجی <span class="text-danger">*</span></label>
+                <select name="machine" class="form-select" required>
+                    <option value="">انتخاب کنید...</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.code }} — {{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">سفارش (اختیاری)</label>
+                <select name="order" class="form-select">
+                    <option value="">بدون سفارش</option>
+                    {% for o in orders %}
+                    <option value="{{ o.id }}">{{ o.order_number }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- وزن -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-scale"></i> وزن (کیلوگرم)</div>
+        <div class="weight-group">
+            <div class="weight-box primary">
+                <label>ورودی کل <span class="text-danger">*</span></label>
+                <input type="number" name="total_input_weight" id="inWeight"
+                       placeholder="۰.۰" step="0.1" min="0" required
+                       oninput="calcAll()">
+            </div>
+            <div class="weight-box">
+                <label>خروجی</label>
+                <input type="number" name="output_weight" id="outWeight"
+                       placeholder="۰.۰" step="0.1" min="0"
+                       oninput="calcAll()">
+            </div>
+            <div class="weight-box auto">
+                <label>ضایعات (خودکار)</label>
+                <input type="text" id="wasteDisp" placeholder="—" readonly
+                       style="cursor:default; color:#c2410c;">
+                <input type="hidden" name="waste_weight" id="wasteHidden">
+            </div>
+        </div>
+    </div>
+
+    <!-- الیاف مصرفی -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-flask"></i> الیاف مصرفی</div>
+
+        <div id="fiberRows">
+            <!-- ردیف اول (پیش‌فرض) -->
+            <div class="fiber-row" id="frow-0">
+                <div class="fiber-row-header">
+                    <div class="fiber-row-num">۱</div>
+                    <div class="fiber-row-title">الیاف اول</div>
+                </div>
+                <div class="fiber-row-grid">
+                    <div>
+                        <label class="form-label">نوع الیاف (از انبار) <span class="text-danger">*</span></label>
+                        <select name="fiber_stock[]" class="form-select fiber-select" onchange="onFiberChange(this, 0)">
+                            <option value="">انتخاب از انبار...</option>
+                            {% for fs in fiber_stocks %}
+                            <option value="{{ fs.id }}"
+                                data-cat="{{ fs.category.name }}"
+                                data-batch="{{ fs.batch_number }}"
+                                data-avail="{{ fs.current_weight }}"
+                                data-grade="{{ fs.quality_grade }}">
+                                {{ fs.category.name }} — لات {{ fs.batch_number }} ({{ fs.current_weight|floatformat:0 }} kg موجود)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="d-none fiber-info-0" id="finfo-0"
+                             style="margin-top:6px; padding:6px 10px; background:#f0fdf4;
+                                    border-radius:8px; font-size:0.78rem; color:#15803d; font-weight:600;">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">وزن مصرفی (kg) <span class="text-danger">*</span></label>
+                        <input type="number" name="fiber_weight[]" class="form-control fiber-weight"
+                               placeholder="۰.۰" step="0.1" min="0"
+                               oninput="calcAll()">
+                    </div>
+                    <div class="pct-display">
+                        <label>سهم در مخلوط</label>
+                        <div class="pct-val" id="fpct-0">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه افزودن -->
+        <button type="button" class="add-fiber-btn" onclick="addFiberRow()" id="addFiberBtn">
+            <i class="ti ti-plus"></i> افزودن نوع الیاف دیگر
+        </button>
+
+        <!-- خلاصه مخلوط -->
+        <div class="blend-summary" id="blendSummary">
+            <div class="blend-summary-title"><i class="ti ti-chart-bar"></i> خلاصه فرمول مخلوط</div>
+            <div class="blend-bars" id="blendBars"></div>
+            <div class="total-check">
+                <span>جمع کل وزن الیاف:</span>
+                <span id="totalFiberWeight" class="total-warn">۰ kg</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- یادداشت -->
+    <div class="tablet-card">
+        <div class="tablet-card-title"><i class="ti ti-note"></i> یادداشت (اختیاری)</div>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="نکات خاص این بچ، کیفیت الیاف، مشکلات..."
+                  style="resize:none; min-height:80px;"></textarea>
+    </div>
+
+    <div class="d-flex gap-3">
+        <button type="submit" class="tablet-btn tablet-btn-success flex-fill" id="submitBtn">
+            <i class="ti ti-check"></i> ثبت تولید حلاجی
+        </button>
+        <a href="{% url 'tablet:home' %}" class="tablet-btn tablet-btn-outline">
+            <i class="ti ti-arrow-right"></i> انصراف
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// تعداد ردیف‌ها
+let rowCount = 1;
+const maxRows = 6;
+
+// ── محاسبه ضایعات ────────────────────────────────────────
+function calcAll() {
+    const inW = parseFloat(document.getElementById('inWeight').value) || 0;
+    const outW = parseFloat(document.getElementById('outWeight').value) || 0;
+
+    if (inW > 0 && outW > 0 && inW >= outW) {
+        const waste = (inW - outW).toFixed(1);
+        document.getElementById('wasteDisp').value = waste + ' kg';
+        document.getElementById('wasteHidden').value = waste;
+    } else {
+        document.getElementById('wasteDisp').value = '';
+        document.getElementById('wasteHidden').value = '';
+    }
+    calcBlend();
+}
+
+// ── محاسبه فرمول مخلوط ──────────────────────────────────
+function calcBlend() {
+    const inW = parseFloat(document.getElementById('inWeight').value) || 0;
+    const weights = document.querySelectorAll('.fiber-weight');
+    const selects = document.querySelectorAll('.fiber-select');
+
+    let totalFiber = 0;
+    let rowData = [];
+
+    weights.forEach((w, i) => {
+        const wt = parseFloat(w.value) || 0;
+        totalFiber += wt;
+        const catName = selects[i] ? selects[i].selectedOptions[0]?.dataset?.cat || '' : '';
+        rowData.push({ w: wt, name: catName, idx: i });
+    });
+
+    // درصد هر ردیف
+    rowData.forEach((rd, i) => {
+        const pctEl = document.getElementById('fpct-' + rd.idx);
+        if (pctEl) {
+            if (totalFiber > 0 && rd.w > 0) {
+                const pct = Math.round((rd.w / totalFiber) * 100);
+                pctEl.textContent = pct + '%';
+            } else {
+                pctEl.textContent = '—';
+            }
+        }
+    });
+
+    // خلاصه
+    const summary = document.getElementById('blendSummary');
+    const bars = document.getElementById('blendBars');
+    const totalEl = document.getElementById('totalFiberWeight');
+
+    if (totalFiber > 0) {
+        summary.style.display = 'block';
+        bars.innerHTML = '';
+        rowData.forEach(rd => {
+            if (rd.w > 0 && rd.name) {
+                const pct = Math.round((rd.w / totalFiber) * 100);
+                bars.innerHTML += `
+                    <div class="blend-bar-row">
+                        <div class="blend-bar-label">${rd.name}</div>
+                        <div class="blend-bar-track">
+                            <div class="blend-bar-fill" style="width:${pct}%"></div>
+                        </div>
+                        <div class="blend-bar-pct">${pct}%</div>
+                    </div>`;
+            }
+        });
+        totalEl.textContent = totalFiber.toFixed(1) + ' kg';
+        if (inW > 0 && Math.abs(totalFiber - inW) < 1) {
+            totalEl.className = 'total-ok';
+        } else if (inW > 0) {
+            totalEl.className = 'total-warn';
+        }
+    } else {
+        summary.style.display = 'none';
+    }
+}
+
+// ── نمایش اطلاعات الیاف انتخابی ────────────────────────
+function onFiberChange(sel, idx) {
+    const opt = sel.selectedOptions[0];
+    const infoEl = document.getElementById('finfo-' + idx);
+    if (opt && opt.value && infoEl) {
+        const avail = opt.dataset.avail;
+        const grade = opt.dataset.grade;
+        infoEl.textContent = `✓ موجودی: ${parseFloat(avail).toFixed(0)} kg | درجه کیفی: ${grade}`;
+        infoEl.style.display = 'block';
+        // بررسی موجودی
+        const wInput = sel.closest('.fiber-row').querySelector('.fiber-weight');
+        if (wInput) {
+            wInput.setAttribute('max', avail);
+        }
+    } else if (infoEl) {
+        infoEl.style.display = 'none';
+    }
+    calcBlend();
+}
+
+// ── افزودن ردیف الیاف ───────────────────────────────────
+function addFiberRow() {
+    if (rowCount >= maxRows) return;
+    const idx = rowCount;
+    const persianNums = ['', 'اول', 'دوم', 'سوم', 'چهارم', 'پنجم', 'ششم'];
+    const fiberOptions = `{% for fs in fiber_stocks %}<option value="{{ fs.id }}" data-cat="{{ fs.category.name }}" data-batch="{{ fs.batch_number }}" data-avail="{{ fs.current_weight }}" data-grade="{{ fs.quality_grade }}">{{ fs.category.name }} — لات {{ fs.batch_number }} ({{ fs.current_weight|floatformat:0 }} kg موجود)</option>{% endfor %}`;
+
+    const html = `
+    <div class="fiber-row" id="frow-${idx}">
+        <div class="fiber-row-header">
+            <div class="fiber-row-num">${idx + 1}</div>
+            <div class="fiber-row-title">الیاف ${persianNums[idx] || (idx+1)}</div>
+            <button type="button" class="remove-fiber-btn" onclick="removeFiberRow(${idx})">
+                <i class="ti ti-trash"></i> حذف
+            </button>
+        </div>
+        <div class="fiber-row-grid">
+            <div>
+                <label class="form-label">نوع الیاف (از انبار)</label>
+                <select name="fiber_stock[]" class="form-select fiber-select" onchange="onFiberChange(this, ${idx})">
+                    <option value="">انتخاب از انبار...</option>
+                    ${fiberOptions}
+                </select>
+                <div style="display:none; margin-top:6px; padding:6px 10px; background:#f0fdf4;
+                            border-radius:8px; font-size:0.78rem; color:#15803d; font-weight:600;"
+                     id="finfo-${idx}"></div>
+            </div>
+            <div>
+                <label class="form-label">وزن مصرفی (kg)</label>
+                <input type="number" name="fiber_weight[]" class="form-control fiber-weight"
+                       placeholder="۰.۰" step="0.1" min="0" oninput="calcAll()">
+            </div>
+            <div class="pct-display">
+                <label>سهم در مخلوط</label>
+                <div class="pct-val" id="fpct-${idx}">—</div>
+            </div>
+        </div>
+    </div>`;
+
+    document.getElementById('fiberRows').insertAdjacentHTML('beforeend', html);
+    rowCount++;
+    if (rowCount >= maxRows) {
+        document.getElementById('addFiberBtn').style.display = 'none';
+    }
+}
+
+// ── حذف ردیف ────────────────────────────────────────────
+function removeFiberRow(idx) {
+    const row = document.getElementById('frow-' + idx);
+    if (row) {
+        row.remove();
+        document.getElementById('addFiberBtn').style.display = 'flex';
+        calcBlend();
+    }
+}
+
+// ── جلوگیری از ثبت دوباره ───────────────────────────────
+document.getElementById('blowroomForm').addEventListener('submit', function(e){
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader"></i> در حال ثبت...';
+});
+</script>
+{% endblock %}

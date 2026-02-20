@@ -1,0 +1,256 @@
+/*
+ * Diaco MES - Tablet Operator Interface
+ * ======================================
+ * طراحی ویژه اپراتور: دکمه‌های بزرگ، خوانایی بالا، حداقل تایپ.
+ * اپراتور با دستکش کار می‌کند → تارگت لمسی حداقل 48px
+ */
+
+/* ── متغیرها ──────────────────────────────────────────── */
+:root {
+    --tablet-font-size: 18px;
+    --tablet-btn-height: 56px;
+    --tablet-input-height: 52px;
+    --tablet-radius: 12px;
+    --tablet-gap: 16px;
+}
+
+/* ── ریست و پایه ─────────────────────────────────────── */
+.tablet-body {
+    font-size: var(--tablet-font-size);
+    background: #f0f2f5;
+    min-height: 100vh;
+}
+
+.tablet-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--tablet-gap);
+}
+
+/* ── هدر تبلت ────────────────────────────────────────── */
+.tablet-header {
+    background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 0 0 var(--tablet-radius) var(--tablet-radius);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--tablet-gap);
+    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+}
+
+.tablet-header h4 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.tablet-header .operator-info {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.tablet-header .shift-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* ── کارت‌ها ──────────────────────────────────────────── */
+.tablet-card {
+    background: #fff;
+    border-radius: var(--tablet-radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 20px;
+    margin-bottom: var(--tablet-gap);
+}
+
+.tablet-card-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #4361ee;
+    border-bottom: 2px solid #e8ecf4;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+
+/* ── فرم ─────────────────────────────────────────────── */
+.tablet-form .form-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.tablet-form .form-control,
+.tablet-form .form-select {
+    height: var(--tablet-input-height);
+    font-size: var(--tablet-font-size);
+    border-radius: 10px;
+    border: 2px solid #dce1e8;
+    padding: 8px 16px;
+}
+
+.tablet-form .form-control:focus,
+.tablet-form .form-select:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+/* ── دکمه‌ها (بزرگ، تارگت لمسی) ─────────────────────── */
+.tablet-btn {
+    height: var(--tablet-btn-height);
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 10px;
+    min-width: 120px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.tablet-btn:active {
+    transform: scale(0.97);
+}
+
+.tablet-btn-primary {
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.35);
+}
+
+.tablet-btn-success {
+    background: linear-gradient(135deg, #198754, #0f5132);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.35);
+}
+
+.tablet-btn-danger {
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+    color: #fff;
+}
+
+.tablet-btn-outline {
+    background: #fff;
+    color: #4361ee;
+    border: 2px solid #4361ee;
+}
+
+/* ── گرید فرم ────────────────────────────────────────── */
+.tablet-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--tablet-gap);
+}
+
+.tablet-grid-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.tablet-full {
+    grid-column: 1 / -1;
+}
+
+/* ── انتخاب سریع (دکمه‌ای) ───────────────────────────── */
+.quick-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.quick-select-btn {
+    flex: 1;
+    min-width: 100px;
+    height: 48px;
+    border: 2px solid #dce1e8;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+}
+
+.quick-select-btn.active,
+.quick-select-btn:active {
+    border-color: #4361ee;
+    background: #eef1ff;
+    color: #4361ee;
+}
+
+/* ── پیام موفقیت / خطا ──────────────────────────────── */
+.tablet-alert {
+    padding: 16px 20px;
+    border-radius: var(--tablet-radius);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: var(--tablet-gap);
+}
+
+.tablet-alert-success {
+    background: #d1f5d3;
+    color: #0f5132;
+    border: 1px solid #a3e9a4;
+}
+
+.tablet-alert-error {
+    background: #f8d7da;
+    color: #842029;
+    border: 1px solid #f1aeb5;
+}
+
+/* ── ناوبری پایین (تبلت) ─────────────────────────────── */
+.tablet-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e8ecf4;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    z-index: 1000;
+}
+
+.tablet-bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #888;
+    font-size: 12px;
+    padding: 4px 12px;
+}
+
+.tablet-bottom-nav a.active {
+    color: #4361ee;
+}
+
+.tablet-bottom-nav a i {
+    font-size: 24px;
+    margin-bottom: 2px;
+}
+
+/* ── ریسپانسیو ──────────────────────────────────────── */
+@media (max-width: 600px) {
+    .tablet-grid {
+        grid-template-columns: 1fr;
+    }
+    .tablet-grid-3 {
+        grid-template-columns: 1fr 1fr;
+    }
+    .tablet-header h4 {
+        font-size: 18px;
+    }
+}

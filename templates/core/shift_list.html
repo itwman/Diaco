@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}شیفت‌ها | دیاکو MES{% endblock %}
+
+{% block breadcrumb %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-header">
+            <div class="page-header-title">
+                <h4 class="mb-0"><i class="ti ti-clock text-primary me-2"></i>شیفت‌ها و سرشیفت‌ها</h4>
+            </div>
+            <div class="page-header-breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">داشبورد</a></li>
+                    <li class="breadcrumb-item active">شیفت‌ها</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- شیفت‌ها -->
+    <div class="col-lg-6 mb-4">
+        <div class="card mb-0 h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">شیفت‌های تعریف‌شده</h5>
+                <span class="badge bg-light-primary f-s-13">{{ object_list|length }} شیفت</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>کد</th>
+                                <th>نام</th>
+                                <th>خط</th>
+                                <th>ساعت</th>
+                                <th>وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in object_list %}
+                            <tr>
+                                <td class="f-w-600">{{ s.code }}</td>
+                                <td>{{ s.name }}</td>
+                                <td>
+                                    {% if s.production_line %}
+                                    <a href="{% url 'core:line_detail' pk=s.production_line.pk %}">{{ s.production_line.code }}</a>
+                                    {% else %}<span class="text-muted">عمومی</span>{% endif %}
+                                </td>
+                                <td class="f-s-13">{{ s.start_time|time:"H:i" }} — {{ s.end_time|time:"H:i" }}</td>
+                                <td>
+                                    {% if s.is_active %}
+                                    <span class="badge bg-light-success text-success">فعال</span>
+                                    {% else %}
+                                    <span class="badge bg-light-secondary text-secondary">غیرفعال</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">شیفتی تعریف نشده</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- سرشیفت‌ها -->
+    <div class="col-lg-6 mb-4">
+        <div class="card mb-0 h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="mb-0">اختصاص سرشیفت‌ها</h5>
+                <span class="badge bg-light-primary f-s-13">{{ assignments|length }} اختصاص</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>خط</th>
+                                <th>شیفت</th>
+                                <th>سرشیفت</th>
+                                <th>وضعیت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in assignments %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'core:line_detail' pk=a.production_line.pk %}">{{ a.production_line.code }}</a>
+                                </td>
+                                <td>{{ a.shift.name }}</td>
+                                <td>
+                                    {% if a.supervisor %}
+                                    <strong>{{ a.supervisor.get_full_name }}</strong>
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if a.is_active %}
+                                    <span class="badge bg-light-success text-success">فعال</span>
+                                    {% else %}
+                                    <span class="badge bg-light-secondary text-secondary">غیرفعال</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">سرشیفتی تعیین نشده</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

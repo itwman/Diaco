@@ -1,0 +1,36 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block table_headers %}
+<th>#</th>
+<th>شماره بچ</th>
+<th>ماشین</th>
+<th>اپراتور</th>
+{% block extra_headers %}{% endblock %}
+<th>وضعیت</th>
+<th>تاریخ</th>
+{% endblock %}
+
+{% block table_body %}
+{% for item in object_list %}
+<tr>
+    <td>{{ forloop.counter }}</td>
+    <td class="f-w-600">{{ item.batch_number }}</td>
+    <td>{{ item.machine.code }}</td>
+    <td>{{ item.operator.get_full_name }}</td>
+    {% block extra_cols %}{% endblock %}
+    <td>
+        {% if item.status == 'completed' %}
+        <span class="badge bg-light-success text-success">{{ item.get_status_display }}</span>
+        {% elif item.status == 'in_progress' %}
+        <span class="badge bg-light-primary text-primary">{{ item.get_status_display }}</span>
+        {% elif item.status == 'quality_hold' %}
+        <span class="badge bg-light-warning text-warning">{{ item.get_status_display }}</span>
+        {% else %}
+        <span class="badge bg-light-danger text-danger">{{ item.get_status_display }}</span>
+        {% endif %}
+    </td>
+    <td>{{ item.production_date|to_jalali }}</td>
+</tr>
+{% endfor %}
+{% endblock %}

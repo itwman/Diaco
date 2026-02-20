@@ -1,0 +1,160 @@
+{% extends "reports/report_base.html" %}
+{% load jalali_tags %}
+
+{% block export_buttons %}
+<div class="col-auto">
+    <a href="{% url 'reports:export_downtime' %}?from={{ date_from|date:'Y-m-d' }}&to={{ date_to|date:'Y-m-d' }}" class="btn btn-danger">
+        <i class="ti ti-file-spreadsheet me-1"></i>Excel توقفات
+    </a>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<!-- KPI -->
+<div class="row">
+    <div class="col-md-3 col-6">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">کل دستور کار</h6>
+                <h3 class="f-w-700 mb-0">{{ wo_stats.total|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">تکمیل شده</h6>
+                <h3 class="f-w-700 mb-0 text-success">{{ wo_stats.completed|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">کل توقف (دقیقه)</h6>
+                <h3 class="f-w-700 mb-0 text-danger">{{ wo_stats.total_downtime|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">هزینه کل (ریال)</h6>
+                <h3 class="f-w-700 mb-0">{{ wo_stats.total_cost|default:0|floatformat:0 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- توقفات بر اساس دلیل -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">توقفات بر اساس دلیل</h5></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead><tr><th>دلیل</th><th>تعداد</th><th>مدت (دقیقه)</th><th>تولید از دست رفته</th></tr></thead>
+                    <tbody>
+                        {% for r in by_reason %}
+                        <tr>
+                            <td class="f-w-600">
+                                {% with reason_labels|default_if_none:"" as rl %}
+                                {{ rl|default:r.reason_category }}
+                                {% endwith %}
+                            </td>
+                            <td>{{ r.count }}</td>
+                            <td class="text-danger f-w-600">{{ r.total_min|default:0 }}</td>
+                            <td>{% if r.total_loss %}{{ r.total_loss|floatformat:1 }} kg{% else %}-{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3">توقفی ثبت نشده</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- نمودار دایره‌ای دلایل -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">سهم دلایل توقف</h5></div>
+            <div class="card-body">
+                <div id="chart-pie-reasons"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ماشین‌های پرتوقف -->
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">ماشین‌های پرتوقف (۱۰ مورد اول)</h5></div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead><tr><th>ماشین</th><th>تعداد توقف</th><th>کل توقف (دقیقه)</th><th>نمودار</th></tr></thead>
+            <tbody>
+                {% for m in by_machine %}
+                <tr>
+                    <td class="f-w-600">{{ m.machine__code }}</td>
+                    <td>{{ m.count }}</td>
+                    <td class="text-danger">{{ m.total_min|default:0 }}</td>
+                    <td style="min-width:150px;">
+                        {% if by_machine.0.total_min and m.total_min %}
+                        {% widthratio m.total_min by_machine.0.total_min 100 as bar_w %}
+                        <div class="progress" style="height:8px;">
+                            <div class="progress-bar bg-danger" style="width:{{ bar_w }}%"></div>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-3">داده‌ای نیست</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- PM عقب‌افتاده -->
+{% if pm_overdue %}
+<div class="card border-danger">
+    <div class="card-header bg-light-danger"><h5 class="mb-0 text-danger"><i class="ti ti-alert-triangle me-1"></i>PM عقب‌افتاده</h5></div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead><tr><th>ماشین</th><th>عنوان</th><th>موعد</th><th>اولویت</th></tr></thead>
+            <tbody>
+                {% for s in pm_overdue %}
+                <tr>
+                    <td class="f-w-600">{{ s.machine.code }}</td>
+                    <td>{{ s.title }}</td>
+                    <td class="text-danger">{{ s.next_due_at|to_jalali_dt }}</td>
+                    <td>
+                        {% if s.priority == 'critical' %}<span class="badge bg-danger">{{ s.get_priority_display }}</span>
+                        {% elif s.priority == 'high' %}<span class="badge bg-warning">{{ s.get_priority_display }}</span>
+                        {% else %}<span class="badge bg-secondary">{{ s.get_priority_display }}</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block report_js %}
+<script>
+var pieData = {{ pie_data|safe }};
+if (pieData.length > 0) {
+    new ApexCharts(document.querySelector('#chart-pie-reasons'), {
+        chart: { type: 'donut', height: 320, fontFamily: 'Vazirmatn FD' },
+        series: pieData.map(d => d.value),
+        labels: pieData.map(d => d.label),
+        colors: ['#dc3545','#fd7e14','#ffc107','#6c757d','#0dcaf0','#4361ee','#adb5bd'],
+        legend: { position: 'bottom', fontSize: '13px' },
+        plotOptions: { pie: { donut: { size: '55%' } } },
+        tooltip: { y: { formatter: v => v + ' دقیقه' } },
+    }).render();
+}
+</script>
+{% endblock %}

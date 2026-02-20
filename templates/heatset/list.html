@@ -1,0 +1,168 @@
+{% extends "includes/list_base.html" %}
+{% load jalali_tags %}
+
+{% block header_actions %}
+<a href="{% url 'heatset:create' %}" class="btn btn-danger btn-sm">
+    <i class="ti ti-plus me-1"></i> بچ جدید
+</a>
+{% endblock %}
+
+{% block extra_before_table %}
+<div class="card-header border-top py-3">
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-danger"><i class="ti ti-flame f-s-18 text-danger"></i></div>
+                <div><div class="f-w-700 f-s-16">{{ stats.total }}</div><div class="text-muted f-s-12">کل بچ‌ها</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-warning"><i class="ti ti-loader f-s-18 text-warning"></i></div>
+                <div><div class="f-w-700 f-s-16">{{ stats.processing }}</div><div class="text-muted f-s-12">در فرآیند</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-success"><i class="ti ti-check f-s-18 text-success"></i></div>
+                <div><div class="f-w-700 f-s-16">{{ stats.completed }}</div><div class="text-muted f-s-12">تکمیل</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-success"><i class="ti ti-circle-check f-s-18 text-success"></i></div>
+                <div><div class="f-w-700 f-s-16">{{ stats.pass_count }}</div><div class="text-muted f-s-12">قبول ✓</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-danger"><i class="ti ti-circle-x f-s-18 text-danger"></i></div>
+                <div><div class="f-w-700 f-s-16">{{ stats.fail_count }}</div><div class="text-muted f-s-12">رد ✗</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avtar avtar-s bg-light-info"><i class="ti ti-weight f-s-18 text-info"></i></div>
+                <div><div class="f-w-700 f-s-16">{{ stats.total_weight_kg|floatformat:0 }} kg</div><div class="text-muted f-s-12">کل وزن</div></div>
+            </div>
+        </div>
+    </div>
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="ti ti-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="شماره بچ..." value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">همه وضعیت‌ها</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="quality" class="form-select form-select-sm">
+                <option value="">همه نتایج</option>
+                {% for val, label in quality_choices %}
+                <option value="{{ val }}" {% if quality_filter == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="machine" class="form-select form-select-sm">
+                <option value="">همه ماشین‌ها</option>
+                {% for m in machines %}
+                <option value="{{ m.id }}" {% if machine_filter == m.id|stringformat:"s" %}selected{% endif %}>{{ m.code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+        </div>
+        <div class="col-md-1">
+            <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-danger btn-sm">فیلتر</button>
+            {% if search_query or status_filter or quality_filter or machine_filter %}
+            <a href="{% url 'heatset:list' %}" class="btn btn-outline-secondary btn-sm">پاک</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block table_headers %}
+<th>#</th>
+<th>شماره بچ</th>
+<th>ماشین</th>
+<th>نوع دستگاه</th>
+<th>تاریخ</th>
+<th>الیاف</th>
+<th>دمای تثبیت</th>
+<th>وزن بچ</th>
+<th>نتیجه کیفی</th>
+<th>وضعیت</th>
+<th>عملیات</th>
+{% endblock %}
+
+{% block table_body %}
+{% for item in object_list %}
+<tr>
+    <td class="text-muted f-s-13">{{ forloop.counter }}</td>
+    <td>
+        <a href="{% url 'heatset:detail' item.pk %}" class="f-w-600 font-monospace text-danger text-decoration-none">
+            {{ item.batch_number }}
+        </a>
+        {% if item.order %}<div class="text-muted f-s-11">{{ item.order.order_number }}</div>{% endif %}
+    </td>
+    <td><span class="badge bg-light-danger text-danger">{{ item.machine.code }}</span></td>
+    <td class="f-s-12">{{ item.get_machine_type_hs_display }}</td>
+    <td class="f-s-13">{{ item.production_date|to_jalali }}</td>
+    <td class="f-s-12">{{ item.get_fiber_type_display }}</td>
+    <td>
+        <span class="f-w-700 text-danger">{{ item.temperature_c }}°C</span>
+        {% if item.steam_pressure_bar %}
+        <div class="text-muted f-s-11">{{ item.steam_pressure_bar }} bar</div>
+        {% endif %}
+    </td>
+    <td><span class="f-w-600">{{ item.batch_weight_kg|floatformat:1 }}</span> <small class="text-muted">kg</small></td>
+    <td>
+        {% if item.quality_result == 'pass' %}
+        <span class="badge bg-success"><i class="ti ti-check me-1"></i>قبول</span>
+        {% elif item.quality_result == 'fail' %}
+        <span class="badge bg-danger"><i class="ti ti-x me-1"></i>رد</span>
+        {% elif item.quality_result == 'conditional' %}
+        <span class="badge bg-warning text-dark">مشروط</span>
+        {% else %}
+        <span class="badge bg-light-secondary text-secondary">—</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if item.status == 'loading' %}
+        <span class="badge bg-light-secondary text-secondary">بارگذاری</span>
+        {% elif item.status == 'processing' %}
+        <span class="badge bg-light-danger text-danger"><i class="ti ti-circle-filled f-s-9 me-1"></i>در فرآیند</span>
+        {% elif item.status == 'cooling' %}
+        <span class="badge bg-light-info text-info">سردشدن</span>
+        {% elif item.status == 'completed' %}
+        <span class="badge bg-light-success text-success">تکمیل ✓</span>
+        {% elif item.status == 'failed' %}
+        <span class="badge bg-danger">ناموفق</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="btn-group btn-group-sm">
+            <a href="{% url 'heatset:detail' item.pk %}" class="btn btn-outline-danger" title="جزئیات">
+                <i class="ti ti-eye"></i>
+            </a>
+            <a href="{% url 'heatset:edit' item.pk %}" class="btn btn-outline-secondary" title="ویرایش">
+                <i class="ti ti-pencil"></i>
+            </a>
+        </div>
+    </td>
+</tr>
+{% endfor %}
+{% endblock %}

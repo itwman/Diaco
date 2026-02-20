@@ -1,0 +1,3 @@
+{% extends "production/production_base_list.html" %}
+{% block extra_headers %}<th>وزن ورودی</th><th>وزن خروجی</th><th>ضایعات%</th>{% endblock %}
+{% block extra_cols %}<td>{{ item.total_input_weight }} kg</td><td>{{ item.output_weight|default:"-" }}</td><td>{{ item.waste_pct|default:"-" }}%</td>{% endblock %}

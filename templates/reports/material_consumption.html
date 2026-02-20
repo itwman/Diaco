@@ -1,0 +1,100 @@
+{% extends "reports/report_base.html" %}
+
+{% block report_content %}
+<!-- KPI -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">موجودی الیاف فعلی</h6>
+                <h3 class="f-w-700 mb-0">{{ fiber_stock_total|floatformat:0 }} <small class="text-muted">kg</small></h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">رنگ موجود</h6>
+                <h3 class="f-w-700 mb-0">{{ dye_stock_count }} <small class="text-muted">قلم</small></h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted f-s-13 mb-1">مواد شیمیایی موجود</h6>
+                <h3 class="f-w-700 mb-0">{{ chem_stock_count }} <small class="text-muted">قلم</small></h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- مصرف الیاف بر اساس دسته -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">مصرف الیاف بر اساس دسته</h5></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead><tr><th>دسته</th><th>مصرف (kg)</th></tr></thead>
+                    <tbody>
+                        {% for f in fiber_usage %}
+                        <tr>
+                            <td class="f-w-600">{{ f.category__name|default:"نامشخص" }}</td>
+                            <td>{{ f.total_used|floatformat:1 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-3">داده‌ای نیست</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- مصرف مواد رنگرزی -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">مصرف مواد رنگرزی</h5></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead><tr><th>نوع</th><th>تعداد مصرف</th><th>مقدار کل</th></tr></thead>
+                    <tbody>
+                        {% for c in chemical_usage %}
+                        <tr>
+                            <td class="f-w-600">{% if c.material_type == 'dye' %}رنگ{% else %}شیمیایی{% endif %}</td>
+                            <td>{{ c.count }}</td>
+                            <td>{{ c.total_used|floatformat:1 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">داده‌ای نیست</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نمودار مصرف الیاف روزانه -->
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">مصرف الیاف روزانه (حلاجی)</h5></div>
+    <div class="card-body"><div id="chart-fiber"></div></div>
+</div>
+{% endblock %}
+
+{% block report_js %}
+<script>
+var chartData = {{ chart_data|safe }};
+if (chartData.length > 0) {
+    new ApexCharts(document.querySelector('#chart-fiber'), {
+        chart: { type: 'bar', height: 300, fontFamily: 'Vazirmatn FD' },
+        series: [{ name: 'مصرف الیاف (kg)', data: chartData.map(d => d.weight) }],
+        xaxis: { categories: chartData.map(d => d.date), labels: { rotate: -45 } },
+        colors: ['#198754'],
+        plotOptions: { bar: { borderRadius: 4 } },
+        dataLabels: { enabled: false },
+    }).render();
+}
+</script>
+{% endblock %}
