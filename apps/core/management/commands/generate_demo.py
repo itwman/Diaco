@@ -11,6 +11,7 @@ cron: هر ساعت یک‌بار  →  0 * * * *  python manage.py generate_dem
 """
 import random
 import time as _tmod
+import jdatetime
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
@@ -647,10 +648,13 @@ class Command(BaseCommand):
         return Shift.objects.filter(production_line=line).first()
 
     def _bn(self, prefix, d=None):
-        d   = d or date.today()
-        ts  = str(int(_tmod.time() * 1000))[-5:]
-        rnd = random.randint(10, 99)
-        return f"{prefix}-{d.strftime('%Y%m%d')}-{ts}{rnd}"
+        """شماره بچ با تاریخ شمسی: BL-14040101-XXXXX"""
+        d    = d or date.today()
+        jd   = jdatetime.date.fromgregorian(date=d)
+        jstr = jd.strftime('%Y%m%d')          # مثال: ۱۴۰۴۱۱۲۱
+        ts   = str(int(_tmod.time() * 1000))[-5:]
+        rnd  = random.randint(10, 99)
+        return f"{prefix}-{jstr}-{ts}{rnd}"
 
     def _ms(self, line, mtype):
         from apps.core.models import Machine
