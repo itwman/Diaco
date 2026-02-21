@@ -321,6 +321,7 @@ def floor_map_api(request):
         'ring': SpinningProduction,
         'winding': WindingProduction,
         'tfo': TFOProduction,
+        'heatset': HeatsetBatch,
     }
     result = []
 
@@ -349,7 +350,7 @@ def floor_map_api(request):
             if last:
                 data['last_batch'] = last.batch_number
                 data['batch_status'] = last.status
-                for f in ('output_weight_kg', 'output_weight', 'fiber_weight'):
+                for f in ('output_weight_kg', 'output_weight', 'batch_weight_kg', 'fiber_weight'):
                     if hasattr(last, f):
                         total = today_qs.aggregate(s=Sum(f))['s']
                         data['output_kg'] = float(total or 0)
@@ -359,9 +360,14 @@ def floor_map_api(request):
                     data['efficiency'] = round(float(avg or 0), 1)
 
         eff = data['efficiency']
-        if data['batch_status'] in ('in_progress', 'processing'):
+        if data['batch_status'] in ('in_progress', 'processing', 'loading', 'cooling'):
             data['heat_level'] = 'good' if eff >= 90 else ('warning' if eff >= 70 else 'critical')
+            # هیت‌ست بر اساس تولید امروز حتی با eff=0 فعال است
+            if data['heat_level'] == 'idle' and data['output_kg'] > 0:
+                data['heat_level'] = 'good'
         elif data['batch_status'] == 'completed' and eff > 0:
+            data['heat_level'] = 'good'
+        elif data['batch_status'] == 'completed' and data['output_kg'] > 0:
             data['heat_level'] = 'good'
 
         result.append(data)
