@@ -9,103 +9,114 @@
 
 /* ── KPI Bar ── */
 .map-kpi-bar {
-    display: flex; gap: 10px; padding: 14px 20px;
-    flex-wrap: wrap; align-items: center; background: #fff;
-    border-bottom: 1px solid #e5e7eb;
+    display: flex; gap: 8px; padding: 10px 16px;
+    flex-wrap: wrap; align-items: center;
+    background: #fff; border-bottom: 1px solid #e5e7eb;
 }
 .map-kpi {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 6px;
     background: #f9fafb; border: 1px solid #e5e7eb;
-    border-radius: 10px; padding: 7px 14px; font-size: 0.83rem;
+    border-radius: 8px; padding: 6px 12px; font-size: 0.82rem;
 }
-.kpi-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-.kpi-count { font-weight: 800; font-size: 1.05rem; margin: 0 3px; }
-.dot-good       { background: #22c55e; }
-.dot-warning    { background: #eab308; }
-.dot-critical   { background: #ef4444; }
-.dot-maintenance{ background: #f97316; }
-.dot-idle       { background: #9ca3af; }
-.map-meta { margin-right: auto; display: flex; align-items: center; gap: 14px; font-size: 0.83rem; color: #6b7280; }
+.kpi-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.kpi-count { font-weight: 800; font-size: 1rem; margin: 0 3px; }
+.dot-good        { background: #22c55e; }
+.dot-warning     { background: #eab308; }
+.dot-critical    { background: #ef4444; }
+.dot-maintenance { background: #f97316; }
+.dot-idle        { background: #9ca3af; }
+.map-meta { margin-right: auto; display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: #6b7280; }
 .live-badge {
-    background: #22c55e; color: #fff; padding: 3px 11px;
-    border-radius: 12px; font-size: 0.73rem; font-weight: 700;
+    background: #22c55e; color: #fff; padding: 3px 10px;
+    border-radius: 10px; font-size: 0.72rem; font-weight: 700;
     animation: pulse-live 2s infinite;
 }
-@keyframes pulse-live { 0%,100%{opacity:1} 50%{opacity:0.7} }
+@keyframes pulse-live { 0%,100%{opacity:1} 50%{opacity:0.65} }
 
-/* ── SVG wrapper ── */
+/* ── SVG wrapper — بدون اسکرول ── */
 .svg-wrapper {
-    background: #111827; border-radius: 10px;
-    margin: 12px 16px; padding: 12px;
-    overflow-x: auto; overflow-y: hidden;
+    background: #0f172a;
+    margin: 10px 12px;
+    border-radius: 10px;
+    padding: 10px;
+    /* ارتفاع کشسان بر اساس viewport */
+    max-height: calc(100vh - 160px);
+    overflow: hidden;
 }
-.floor-svg { width: 100%; min-width: 1500px; height: auto; display: block; }
+.floor-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
 
-/* ── Zone styles ── */
-.zone-bg    { fill: #1a2235; stroke: #2d3f5c; stroke-width: 1.5; stroke-dasharray: 6 3; }
-.zone-bg-qc { fill: #1a2030; stroke: #3d4a6c; stroke-width: 1.5; stroke-dasharray: 4 2; }
-.zone-bg-finish { fill: #1c2030; stroke: #3b5f3b; stroke-width: 1.5; stroke-dasharray: 6 3; }
-.zone-label {
-    fill: #94a3b8; font-size: 11px; font-weight: 700;
+/* ── Zone ── */
+.zone-bg       { fill: #1a2235; stroke: #334155; stroke-width: 1.5; stroke-dasharray: 5 3; }
+.zone-finish   { fill: #0f2620; stroke: #166534; stroke-width: 1.5; stroke-dasharray: 5 3; }
+.zone-qc       { fill: #0d1f3c; stroke: #1e40af; stroke-width: 1.5; stroke-dasharray: 4 2; }
+.zone-lab      { fill: #1a0f2e; stroke: #6d28d9; stroke-width: 1.5; stroke-dasharray: 4 2; }
+.zone-storage  { fill: #1c1208; stroke: #92400e; stroke-width: 1.5; stroke-dasharray: 5 3; }
+
+.zone-title {
+    fill: #94a3b8; font-size: 13px; font-weight: 700;
     font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle;
 }
-.zone-label-en {
-    fill: #4a5568; font-size: 7.5px;
+.zone-sub {
+    fill: #475569; font-size: 8.5px;
     font-family: 'Consolas', monospace; text-anchor: middle;
 }
-.zone-icon { fill: #475569; font-size: 14px; text-anchor: middle; }
 
 /* ── Machine ── */
-.machine-rect { rx: 4; ry: 4; stroke-width: 1.5; cursor: pointer; transition: all 0.25s; }
-.machine-rect:hover { stroke-width: 3; filter: brightness(1.25) drop-shadow(0 0 6px currentColor); }
-.machine-code { font-size: 6.5px; font-weight: 700; font-family: 'Consolas', monospace; text-anchor: middle; fill: #fff; pointer-events: none; }
-.machine-name { font-size: 5.5px; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; fill: rgba(255,255,255,0.7); pointer-events: none; }
+.machine-rect { cursor: pointer; transition: all 0.2s; }
+.machine-rect:hover { filter: brightness(1.3) drop-shadow(0 0 5px currentColor); stroke-width: 3 !important; }
+.m-code { font-size: 9px; font-weight: 800; font-family: 'Consolas', monospace; text-anchor: middle; fill: #fff; pointer-events: none; }
+.m-eff  { font-size: 8px; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; fill: rgba(255,255,255,0.8); pointer-events: none; }
 
-/* ── Heatmap colors ── */
-.heat-good        { fill: #16a34a; stroke: #15803d; }
-.heat-warning     { fill: #ca8a04; stroke: #a16207; }
-.heat-critical    { fill: #dc2626; stroke: #b91c1c; animation: blink-c 1.2s infinite; }
-.heat-maintenance { fill: #ea580c; stroke: #c2410c; stroke-dasharray: 4 2; }
-.heat-idle        { fill: #1f2937; stroke: #374151; }
-
-@keyframes blink-c { 0%,100%{opacity:1} 50%{opacity:0.45} }
+/* ── Heatmap ── */
+.heat-good        { fill: #16a34a; stroke: #15803d; stroke-width: 1.5; }
+.heat-warning     { fill: #ca8a04; stroke: #a16207; stroke-width: 1.5; }
+.heat-critical    { fill: #dc2626; stroke: #b91c1c; stroke-width: 1.5; animation: blink-c 1.2s infinite; }
+.heat-maintenance { fill: #ea580c; stroke: #c2410c; stroke-width: 1.5; stroke-dasharray: 4 2; }
+.heat-idle        { fill: #1e293b; stroke: #334155; stroke-width: 1; }
+@keyframes blink-c { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 /* ── Flow arrows ── */
-.flow-line { fill: none; stroke: #334155; stroke-width: 1.2; marker-end: url(#ah); }
-.flow-label { fill: #475569; font-size: 7px; font-family: 'Consolas', monospace; text-anchor: middle; }
+.flow { fill: none; stroke: #334155; stroke-width: 1.5; marker-end: url(#ah); }
 
-/* ── QC / Lab special ── */
-.qc-box { fill: #1e3a5f; stroke: #3b82f6; stroke-width: 1.5; }
-.qc-label { fill: #93c5fd; font-size: 9px; font-weight: 700; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; }
-.lab-box  { fill: #1e3040; stroke: #8b5cf6; stroke-width: 1.5; }
-.lab-label{ fill: #c4b5fd; font-size: 9px; font-weight: 700; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; }
+/* ── QC/Lab boxes ── */
+.qc-box  { fill: #0d1f3c; stroke: #3b82f6; stroke-width: 1.5; }
+.lab-box { fill: #1a0f2e; stroke: #8b5cf6; stroke-width: 1.5; }
+.qc-t  { fill: #93c5fd; font-size: 9px; font-weight: 700; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; }
+.lab-t { fill: #c4b5fd; font-size: 9px; font-weight: 700; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; }
+.qc-s  { fill: #60a5fa; font-size: 7.5px; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; }
+.lab-s { fill: #a78bfa; font-size: 7.5px; font-family: 'Vazirmatn FD', sans-serif; text-anchor: middle; }
 
 /* ── Tooltip ── */
 .map-tooltip {
     position: fixed; display: none;
-    background: #fff; border: 1px solid #d1d5db;
-    border-radius: 12px; padding: 14px 18px;
-    min-width: 240px; max-width: 280px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    z-index: 1000; font-size: 0.83rem; direction: rtl; pointer-events: none;
+    background: #fff; border: 1px solid #d1d5db; border-radius: 10px;
+    padding: 12px 16px; min-width: 230px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    z-index: 9999; font-size: 0.82rem; direction: rtl; pointer-events: none;
 }
 .map-tooltip.visible { display: block; }
-.tt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
-.tt-name  { font-weight: 800; font-size: 0.92rem; color: #111827; }
-.tt-status{ padding: 2px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; }
-.tt-status-good        { background: #dcfce7; color: #166534; }
-.tt-status-warning     { background: #fef9c3; color: #854d0e; }
-.tt-status-critical    { background: #fee2e2; color: #991b1b; }
-.tt-status-maintenance { background: #ffedd5; color: #9a3412; }
-.tt-status-idle        { background: #f3f4f6; color: #374151; }
-.tt-row { display: flex; justify-content: space-between; padding: 3px 0; }
-.tt-key { color: #6b7280; }
-.tt-val { font-weight: 700; color: #111827; }
+.tt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #f0f0f0; }
+.tt-name   { font-weight: 800; color: #111; font-size: 0.9rem; }
+.tt-badge  { padding: 2px 9px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; }
+.s-good        { background:#dcfce7; color:#166534; }
+.s-warning     { background:#fef9c3; color:#854d0e; }
+.s-critical    { background:#fee2e2; color:#991b1b; }
+.s-maintenance { background:#ffedd5; color:#9a3412; }
+.s-idle        { background:#f3f4f6; color:#374151; }
+.tt-row { display: flex; justify-content: space-between; padding: 2px 0; }
+.tt-k { color:#6b7280; } .tt-v { font-weight:700; color:#111; }
 
 /* ── Legend ── */
-.map-legend { display: flex; gap: 14px; justify-content: center; padding: 10px; font-size: 0.78rem; color: #64748b; flex-wrap: wrap; }
+.map-legend {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    padding: 8px 12px; font-size: 0.76rem; color: #64748b;
+}
 .legend-item { display: flex; align-items: center; gap: 5px; }
-.legend-box  { width: 16px; height: 10px; border-radius: 3px; }
+.legend-box  { width: 14px; height: 9px; border-radius: 2px; }
 </style>
 {% endblock %}
 
@@ -114,7 +125,7 @@
     <div class="col-12">
         <div class="page-header">
             <div class="page-header-title">
-                <h4 class="mb-0"><i class="ti ti-map-2 text-primary me-2"></i>نقشه کارگاه - Heatmap زنده</h4>
+                <h4 class="mb-0"><i class="ti ti-map-2 text-primary me-2"></i>نقشه کارگاه — Heatmap زنده</h4>
             </div>
             <div class="page-header-breadcrumb">
                 <ol class="breadcrumb mb-0">
@@ -130,316 +141,242 @@
 {% block content %}
 <div class="floor-map-page">
 
-    <!-- ── KPI Bar ── -->
+    <!-- KPI Bar -->
     <div class="map-kpi-bar">
         <div class="map-meta">
             <span class="live-badge">● زنده</span>
-            <span id="meta-date">--</span>
-            <span id="meta-shift">--</span>
-            <span id="meta-timer" class="text-muted" style="font-size:0.75rem;">بروزرسانی تا ۳۰ ثانیه</span>
+            <span id="meta-date" style="font-weight:600;"></span>
+            <span id="meta-shift" style="color:#374151;font-weight:600;"></span>
+            <span id="meta-timer" style="font-size:0.73rem;"></span>
         </div>
-        <div class="map-kpi"><span class="kpi-dot dot-good"></span>فعال:<span class="kpi-count" id="kpi-good">0</span></div>
-        <div class="map-kpi"><span class="kpi-dot dot-warning"></span>هشدار:<span class="kpi-count" id="kpi-warning">0</span></div>
-        <div class="map-kpi"><span class="kpi-dot dot-critical"></span>بحرانی:<span class="kpi-count" id="kpi-critical">0</span></div>
-        <div class="map-kpi"><span class="kpi-dot dot-maintenance"></span>تعمیر:<span class="kpi-count" id="kpi-maintenance">0</span></div>
-        <div class="map-kpi"><span class="kpi-dot dot-idle"></span>خاموش:<span class="kpi-count" id="kpi-idle">0</span></div>
+        <div class="map-kpi"><span class="kpi-dot dot-good"></span>فعال<span class="kpi-count" id="kpi-good">0</span></div>
+        <div class="map-kpi"><span class="kpi-dot dot-warning"></span>هشدار<span class="kpi-count" id="kpi-warning">0</span></div>
+        <div class="map-kpi"><span class="kpi-dot dot-critical"></span>بحرانی<span class="kpi-count" id="kpi-critical">0</span></div>
+        <div class="map-kpi"><span class="kpi-dot dot-maintenance"></span>تعمیر<span class="kpi-count" id="kpi-maintenance">0</span></div>
+        <div class="map-kpi"><span class="kpi-dot dot-idle"></span>خاموش<span class="kpi-count" id="kpi-idle">0</span></div>
     </div>
 
-    <!-- ── SVG Floor Map ── -->
+    <!-- SVG Map -->
     <div class="svg-wrapper">
         <!--
-            ╔══════════════════════════════════════════════════════════════════╗
-            ║  چیدمان کارگاه دیاکو MES — نقشه کامل                           ║
-            ║  viewBox: 0 0 1600 700                                           ║
-            ║  ──────────────────────────────────────────────────────────────  ║
-            ║  ردیف بالا: انبار | حلاجی | کاردینگ | پاساژ | فینیشر | رینگ   ║
-            ║  ردیف وسط: ─── خط تکمیل نخ فرش ────────────────────────────── ║
-            ║  بخش تکمیل: بوبین‌پیچی | دولاتابی | هیت‌ست                     ║
-            ║  ردیف پایین: رنگرزی | کنترل کیفیت | آزمایشگاه | انبار محصول  ║
-            ╚══════════════════════════════════════════════════════════════════╝
+        ════════════════════════════════════════════════════════
+        viewBox: 0 0 1000 580  (نسبت ۱۰:۵.۸ — کشیده افقی)
+        ردیف ۱ (y=8..290):
+          انبار|حلاجی|کاردینگ|پاساژ|فینیشر|سالن رینگ
+        ردیف ۲ (y=298..570):
+          رنگرزی|QC+Lab|بوبین‌پیچی|دولاتابی|هیت‌ست|انبار نهایی
+        ════════════════════════════════════════════════════════
         -->
-        <svg class="floor-svg" viewBox="0 0 1600 700" xmlns="http://www.w3.org/2000/svg">
+        <svg class="floor-svg" viewBox="0 0 1000 580"
+             xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
             <defs>
-                <marker id="ah" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                    <polygon points="0 0,8 3,0 6" fill="#475569"/>
+                <marker id="ah" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+                    <polygon points="0 0,7 2.5,0 5" fill="#475569"/>
                 </marker>
-                <marker id="ah-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                    <polygon points="0 0,8 3,0 6" fill="#3b82f6"/>
-                </marker>
-                <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                    <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1f2937" stroke-width="0.4"/>
+                <pattern id="g" width="25" height="25" patternUnits="userSpaceOnUse">
+                    <path d="M25 0L0 0 0 25" fill="none" stroke="#1e293b" stroke-width="0.4"/>
                 </pattern>
             </defs>
 
             <!-- پس‌زمینه -->
-            <rect width="1600" height="700" fill="url(#grid)" opacity="0.6"/>
+            <rect width="1000" height="580" fill="url(#g)"/>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  ردیف بالا — خط ریسندگی اصلی (y=10 h=310)                   -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!-- ══════════════════ ردیف ۱ — ریسندگی اصلی ══════════════════ -->
 
-            <!-- 1. انبار مواد اولیه -->
-            <rect x="8" y="8" width="95" height="310" class="zone-bg" rx="6"/>
-            <text x="55" y="170" class="zone-label" transform="rotate(-90,55,170)">انبار مواد اولیه</text>
-            <text x="55" y="188" class="zone-label-en" transform="rotate(-90,55,188)">RAW STORAGE</text>
-            <!-- بسته‌های الیاف نمادین -->
-            <rect x="18" y="30"  width="28" height="16" rx="2" fill="#1f3b2f" stroke="#2d5a42"/>
-            <rect x="52" y="30"  width="28" height="16" rx="2" fill="#1f3b2f" stroke="#2d5a42"/>
-            <rect x="18" y="52"  width="28" height="16" rx="2" fill="#1f3b2f" stroke="#2d5a42"/>
-            <rect x="52" y="52"  width="28" height="16" rx="2" fill="#1f3b2f" stroke="#2d5a42"/>
-            <rect x="18" y="74"  width="28" height="16" rx="2" fill="#243b50" stroke="#2d5a6e"/>
-            <rect x="52" y="74"  width="28" height="16" rx="2" fill="#243b50" stroke="#2d5a6e"/>
-            <rect x="18" y="96"  width="28" height="16" rx="2" fill="#243b50" stroke="#2d5a6e"/>
-            <rect x="52" y="96"  width="28" height="16" rx="2" fill="#243b50" stroke="#2d5a6e"/>
-            <text x="55" y="130" class="zone-icon">📦</text>
+            <!-- 1. انبار مواد اولیه  x=5 w=72 -->
+            <rect x="5" y="5" width="72" height="285" class="zone-bg" rx="5"/>
+            <text x="41" y="152" class="zone-title" transform="rotate(-90,41,152)">انبار مواد اولیه</text>
+            <text x="41" y="166" class="zone-sub"   transform="rotate(-90,41,166)">RAW STORAGE</text>
+            <!-- بسته‌ها -->
+            <rect x="13" y="18"  width="22" height="14" rx="2" fill="#1a3829" stroke="#2d5a42"/>
+            <rect x="40" y="18"  width="22" height="14" rx="2" fill="#1a3829" stroke="#2d5a42"/>
+            <rect x="13" y="37"  width="22" height="14" rx="2" fill="#1a3829" stroke="#2d5a42"/>
+            <rect x="40" y="37"  width="22" height="14" rx="2" fill="#1a3829" stroke="#2d5a42"/>
+            <rect x="13" y="56"  width="22" height="14" rx="2" fill="#1c2f4a" stroke="#2d4a6e"/>
+            <rect x="40" y="56"  width="22" height="14" rx="2" fill="#1c2f4a" stroke="#2d4a6e"/>
+            <text x="41" y="90"  style="font-size:20px;text-anchor:middle;fill:#334155;">📦</text>
+            <!-- فلش -->
+            <line x1="77" y1="150" x2="88" y2="150" class="flow"/>
 
-            <!-- فلش انبار → حلاجی -->
-            <line x1="103" y1="160" x2="118" y2="160" class="flow-line"/>
-
-            <!-- 2. حلاجی -->
-            <rect x="108" y="8" width="130" height="310" class="zone-bg" rx="6"/>
-            <text x="173" y="26" class="zone-label">حلاجی</text>
-            <text x="173" y="37" class="zone-label-en">BLOWROOM</text>
+            <!-- 2. حلاجی  x=83 w=115 -->
+            <rect x="83" y="5" width="115" height="285" class="zone-bg" rx="5"/>
+            <text x="140" y="22" class="zone-title">حلاجی</text>
+            <text x="140" y="33" class="zone-sub">BLOWROOM</text>
             <g id="zone-blowroom" data-type="blowroom"></g>
+            <line x1="198" y1="150" x2="209" y2="150" class="flow"/>
 
-            <!-- فلش حلاجی → کاردینگ -->
-            <line x1="238" y1="160" x2="253" y2="160" class="flow-line"/>
-
-            <!-- 3. کاردینگ -->
-            <rect x="248" y="8" width="230" height="310" class="zone-bg" rx="6"/>
-            <text x="363" y="26" class="zone-label">کاردینگ</text>
-            <text x="363" y="37" class="zone-label-en">CARDING</text>
+            <!-- 3. کاردینگ  x=205 w=190 -->
+            <rect x="205" y="5" width="190" height="285" class="zone-bg" rx="5"/>
+            <text x="300" y="22" class="zone-title">کاردینگ</text>
+            <text x="300" y="33" class="zone-sub">CARDING</text>
             <g id="zone-carding" data-type="carding"></g>
+            <line x1="395" y1="150" x2="406" y2="150" class="flow"/>
 
-            <!-- فلش کاردینگ → پاساژ -->
-            <line x1="478" y1="160" x2="493" y2="160" class="flow-line"/>
-
-            <!-- 4. پاساژ -->
-            <rect x="488" y="8" width="120" height="310" class="zone-bg" rx="6"/>
-            <text x="548" y="26" class="zone-label">پاساژ</text>
-            <text x="548" y="37" class="zone-label-en">PASSAGE / DRAWING</text>
+            <!-- 4. پاساژ  x=403 w=100 -->
+            <rect x="403" y="5" width="100" height="285" class="zone-bg" rx="5"/>
+            <text x="453" y="22" class="zone-title">پاساژ</text>
+            <text x="453" y="33" class="zone-sub">PASSAGE</text>
             <g id="zone-passage" data-type="passage"></g>
+            <line x1="503" y1="150" x2="514" y2="150" class="flow"/>
 
-            <!-- فلش پاساژ → فینیشر -->
-            <line x1="608" y1="160" x2="623" y2="160" class="flow-line"/>
-
-            <!-- 5. فینیشر -->
-            <rect x="618" y="8" width="120" height="310" class="zone-bg" rx="6"/>
-            <text x="678" y="26" class="zone-label">فینیشر</text>
-            <text x="678" y="37" class="zone-label-en">ROVING / FINISHER</text>
+            <!-- 5. فینیشر  x=511 w=100 -->
+            <rect x="511" y="5" width="100" height="285" class="zone-bg" rx="5"/>
+            <text x="561" y="22" class="zone-title">فینیشر</text>
+            <text x="561" y="33" class="zone-sub">ROVING</text>
             <g id="zone-finisher" data-type="finisher"></g>
+            <line x1="611" y1="150" x2="622" y2="150" class="flow"/>
 
-            <!-- فلش فینیشر → رینگ -->
-            <line x1="738" y1="160" x2="753" y2="160" class="flow-line"/>
-
-            <!-- 6. سالن رینگ (بزرگ‌ترین بخش) -->
-            <rect x="748" y="8" width="490" height="310" class="zone-bg" rx="6"/>
-            <text x="993" y="26" class="zone-label">سالن رینگ</text>
-            <text x="993" y="37" class="zone-label-en">RING SPINNING HALL</text>
+            <!-- 6. سالن رینگ  x=619 w=376 -->
+            <rect x="619" y="5" width="376" height="285" class="zone-bg" rx="5"/>
+            <text x="807" y="22" class="zone-title">سالن رینگ</text>
+            <text x="807" y="33" class="zone-sub">RING SPINNING HALL</text>
             <g id="zone-ring" data-type="ring"></g>
 
-            <!-- فلش رینگ → بوبین‌پیچی (عمودی به پایین) -->
-            <line x1="993" y1="318" x2="993" y2="338" class="flow-line"/>
+            <!-- فلش رینگ → پایین (ردیف ۲ تکمیل) -->
+            <line x1="807" y1="290" x2="807" y2="302" class="flow"/>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  ردیف وسط — بخش تکمیل نخ فرش (y=345 h=185)                  -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
+            <!-- خط جداکننده -->
+            <line x1="5" y1="295" x2="995" y2="295" stroke="#1e3a2e" stroke-width="1.5" stroke-dasharray="8 4"/>
+            <text x="500" y="301" style="fill:#166534;font-size:8px;font-weight:700;text-anchor:middle;font-family:'Vazirmatn FD';">── خط تکمیل نخ فرش: بوبین‌پیچی ─ دولاتابی ─ هیت‌ست ──</text>
 
-            <!-- برچسب ردیف تکمیل -->
-            <rect x="748" y="340" width="490" height="8" rx="0" fill="#1e3a2e" opacity="0.7"/>
-            <text x="993" y="347" class="flow-label" fill="#4ade80" style="font-size:8px;font-weight:700;">── خط تکمیل نخ فرش ──</text>
+            <!-- ══════════════════ ردیف ۲ ══════════════════ -->
 
-            <!-- 7. بوبین‌پیچی (Winding) -->
-            <rect x="748" y="348" width="155" height="185" class="zone-bg-finish" rx="6"/>
-            <text x="825" y="366" class="zone-label" style="fill:#86efac;">بوبین‌پیچی</text>
-            <text x="825" y="377" class="zone-label-en">WINDING</text>
-            <g id="zone-winding" data-type="winding"></g>
-
-            <!-- فلش بوبین‌پیچی → دولاتابی -->
-            <line x1="903" y1="440" x2="918" y2="440" class="flow-line"/>
-
-            <!-- 8. دولاتابی TFO -->
-            <rect x="913" y="348" width="155" height="185" class="zone-bg-finish" rx="6"/>
-            <text x="990" y="366" class="zone-label" style="fill:#86efac;">دولاتابی TFO</text>
-            <text x="990" y="377" class="zone-label-en">TWO-FOR-ONE TWIST</text>
-            <g id="zone-tfo" data-type="tfo"></g>
-
-            <!-- فلش TFO → هیت‌ست -->
-            <line x1="1068" y1="440" x2="1083" y2="440" class="flow-line"/>
-
-            <!-- 9. هیت‌ست -->
-            <rect x="1078" y="348" width="160" height="185" class="zone-bg-finish" rx="6"/>
-            <text x="1158" y="366" class="zone-label" style="fill:#86efac;">هیت‌ست</text>
-            <text x="1158" y="377" class="zone-label-en">HEAT SETTING</text>
-            <g id="zone-heatset" data-type="heatset"></g>
-
-            <!-- فلش هیت‌ست → انبار محصول -->
-            <line x1="1238" y1="440" x2="1253" y2="440" class="flow-line"/>
-
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  ردیف چپ پایین — رنگرزی (y=348 h=185)                        -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <rect x="8" y="348" width="260" height="185" class="zone-bg" rx="6"/>
-            <text x="138" y="366" class="zone-label">رنگرزی</text>
-            <text x="138" y="377" class="zone-label-en">DYEING SECTION</text>
+            <!-- 7. رنگرزی  x=5 w=140 -->
+            <rect x="5" y="305" width="140" height="270" class="zone-bg" rx="5"/>
+            <text x="75" y="322" class="zone-title">رنگرزی</text>
+            <text x="75" y="333" class="zone-sub">DYEING</text>
             <g id="zone-dyeing" data-type="dyeing"></g>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  ردیف وسط پایین — کنترل کیفیت (y=348)                        -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <rect x="278" y="348" width="235" height="85" class="zone-bg-qc" rx="6"/>
-            <text x="395" y="364" class="zone-label" style="fill:#93c5fd;">کنترل کیفیت</text>
-            <text x="395" y="374" class="zone-label-en">QUALITY CONTROL</text>
+            <!-- 8. کنترل کیفیت + آزمایشگاه  x=150 w=200 -->
+            <rect x="150" y="305" width="200" height="270" class="zone-qc" rx="5"/>
 
-            <!-- ایستگاه‌های QC -->
-            <!-- QC-01 -->
-            <rect x="295" y="385" width="45" height="32" class="qc-box" rx="4"/>
-            <text x="317" y="397" class="qc-label" style="font-size:7px;">QC-01</text>
-            <text x="317" y="408" style="fill:#93c5fd;font-size:5.5px;text-anchor:middle;font-family:'Vazirmatn FD';">آزمون نمره</text>
-            <!-- QC-02 -->
-            <rect x="348" y="385" width="45" height="32" class="qc-box" rx="4"/>
-            <text x="370" y="397" class="qc-label" style="font-size:7px;">QC-02</text>
-            <text x="370" y="408" style="fill:#93c5fd;font-size:5.5px;text-anchor:middle;font-family:'Vazirmatn FD';">استحکام</text>
-            <!-- QC-03 -->
-            <rect x="401" y="385" width="45" height="32" class="qc-box" rx="4"/>
-            <text x="423" y="397" class="qc-label" style="font-size:7px;">QC-03</text>
-            <text x="423" y="408" style="fill:#93c5fd;font-size:5.5px;text-anchor:middle;font-family:'Vazirmatn FD';">یکنواختی</text>
-            <!-- QC-04 -->
-            <rect x="454" y="385" width="45" height="32" class="qc-box" rx="4"/>
-            <text x="476" y="397" class="qc-label" style="font-size:7px;">QC-04</text>
-            <text x="476" y="408" style="fill:#93c5fd;font-size:5.5px;text-anchor:middle;font-family:'Vazirmatn FD';">رنگ‌ثبات</text>
+            <!-- بخش بالا: QC -->
+            <text x="250" y="322" class="zone-title" style="fill:#93c5fd;">کنترل کیفیت</text>
+            <text x="250" y="333" class="zone-sub" style="fill:#3b82f6;">QUALITY CONTROL</text>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  آزمایشگاه (y=443)                                            -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <rect x="278" y="443" width="235" height="90" class="zone-bg-qc" rx="6" style="stroke:#8b5cf6;"/>
-            <text x="395" y="459" class="zone-label" style="fill:#c4b5fd;">آزمایشگاه</text>
-            <text x="395" y="469" class="zone-label-en">LABORATORY</text>
+            <rect x="160" y="342" width="44" height="46" class="qc-box" rx="4"/>
+            <text x="182" y="357" class="qc-t">QC-01</text>
+            <text x="182" y="369" class="qc-s">آزمون نمره</text>
+            <text x="182" y="381" class="qc-s">نخ</text>
 
-            <!-- تجهیزات آزمایشگاه -->
-            <!-- Uster Tester -->
-            <rect x="293" y="476" width="52" height="42" class="lab-box" rx="4"/>
-            <text x="319" y="490" class="lab-label" style="font-size:6.5px;">Uster</text>
-            <text x="319" y="500" class="lab-label" style="font-size:6.5px;">Tester</text>
-            <text x="319" y="512" style="fill:#a78bfa;font-size:5px;text-anchor:middle;">یکنواختی نخ</text>
-            <!-- Tensile Tester -->
-            <rect x="353" y="476" width="52" height="42" class="lab-box" rx="4"/>
-            <text x="379" y="490" class="lab-label" style="font-size:6.5px;">Tensile</text>
-            <text x="379" y="500" class="lab-label" style="font-size:6.5px;">Tester</text>
-            <text x="379" y="512" style="fill:#a78bfa;font-size:5px;text-anchor:middle;">استحکام</text>
-            <!-- Twist Tester -->
-            <rect x="413" y="476" width="52" height="42" class="lab-box" rx="4"/>
-            <text x="439" y="490" class="lab-label" style="font-size:6.5px;">Twist</text>
-            <text x="439" y="500" class="lab-label" style="font-size:6.5px;">Tester</text>
-            <text x="439" y="512" style="fill:#a78bfa;font-size:5px;text-anchor:middle;">آزمون تاب</text>
-            <!-- Wrap Reel -->
-            <rect x="473" y="476" width="33" height="42" class="lab-box" rx="4"/>
-            <text x="489" y="490" class="lab-label" style="font-size:6px;">Wrap</text>
-            <text x="489" y="500" class="lab-label" style="font-size:6px;">Reel</text>
-            <text x="489" y="512" style="fill:#a78bfa;font-size:5px;text-anchor:middle;">نمره‌سنج</text>
+            <rect x="210" y="342" width="44" height="46" class="qc-box" rx="4"/>
+            <text x="232" y="357" class="qc-t">QC-02</text>
+            <text x="232" y="369" class="qc-s">استحکام</text>
+            <text x="232" y="381" class="qc-s">کشش</text>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  انبار محصول نهایی (گوشه راست پایین)                          -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <rect x="1248" y="348" width="340" height="185" class="zone-bg" rx="6"/>
-            <text x="1418" y="366" class="zone-label" style="fill:#fbbf24;">انبار محصول نهایی</text>
-            <text x="1418" y="377" class="zone-label-en">FINISHED GOODS WAREHOUSE</text>
-            <!-- بوبین‌های نخ نمادین -->
-            <circle cx="1290" cy="420" r="12" fill="none" stroke="#ca8a04" stroke-width="2"/>
-            <circle cx="1290" cy="420" r="5"  fill="#78350f"/>
-            <text x="1290" y="443" style="fill:#ca8a04;font-size:6px;text-anchor:middle;">بوبین نخ</text>
-            <circle cx="1320" cy="420" r="12" fill="none" stroke="#ca8a04" stroke-width="2"/>
-            <circle cx="1320" cy="420" r="5"  fill="#78350f"/>
-            <circle cx="1350" cy="420" r="12" fill="none" stroke="#ca8a04" stroke-width="2"/>
-            <circle cx="1350" cy="420" r="5"  fill="#78350f"/>
-            <circle cx="1380" cy="420" r="12" fill="none" stroke="#ca8a04" stroke-width="2"/>
-            <circle cx="1380" cy="420" r="5"  fill="#78350f"/>
-            <circle cx="1290" cy="460" r="12" fill="none" stroke="#854d0e" stroke-width="2"/>
-            <circle cx="1290" cy="460" r="5"  fill="#78350f"/>
-            <circle cx="1320" cy="460" r="12" fill="none" stroke="#854d0e" stroke-width="2"/>
-            <circle cx="1320" cy="460" r="5"  fill="#78350f"/>
-            <circle cx="1350" cy="460" r="12" fill="none" stroke="#854d0e" stroke-width="2"/>
-            <circle cx="1350" cy="460" r="5"  fill="#78350f"/>
-            <circle cx="1380" cy="460" r="12" fill="none" stroke="#854d0e" stroke-width="2"/>
-            <circle cx="1380" cy="460" r="5"  fill="#78350f"/>
-            <text x="1335" y="495" class="zone-icon" style="font-size:22px;">📦</text>
-            <text x="1418" y="500" class="zone-label-en" style="fill:#92400e;font-size:8px;">آماده تحویل به مشتری</text>
+            <rect x="260" y="342" width="44" height="46" class="qc-box" rx="4"/>
+            <text x="282" y="357" class="qc-t">QC-03</text>
+            <text x="282" y="369" class="qc-s">یکنواختی</text>
+            <text x="282" y="381" class="qc-s">CV%</text>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  اتاق کنترل و سیستم MES (گوشه راست بالا)                     -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <rect x="1248" y="8" width="340" height="120" class="zone-bg-qc" rx="6"/>
-            <text x="1418" y="24" class="zone-label" style="fill:#34d399;">اتاق کنترل MES</text>
-            <text x="1418" y="35" class="zone-label-en">MES CONTROL ROOM</text>
-            <!-- نمایشگرها -->
-            <rect x="1265" y="44" width="50" height="32" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
-            <text x="1290" y="62" style="fill:#10b981;font-size:6px;text-anchor:middle;font-family:Consolas;">داشبورد</text>
-            <rect x="1325" y="44" width="50" height="32" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
-            <text x="1350" y="62" style="fill:#10b981;font-size:6px;text-anchor:middle;font-family:Consolas;">هیتمپ</text>
-            <rect x="1385" y="44" width="50" height="32" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
-            <text x="1410" y="62" style="fill:#10b981;font-size:6px;text-anchor:middle;font-family:Consolas;">گزارش</text>
-            <rect x="1445" y="44" width="50" height="32" rx="3" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/>
-            <text x="1470" y="62" style="fill:#10b981;font-size:6px;text-anchor:middle;font-family:Consolas;">هشدار</text>
-            <text x="1418" y="100" style="fill:#059669;font-size:7px;text-anchor:middle;font-family:'Vazirmatn FD';">سیستم دیاکو MES — پارک علم و فناوری کاشان</text>
-            <text x="1418" y="113" style="fill:#047857;font-size:6px;text-anchor:middle;font-family:Consolas;">Diaco MES v2.0 | Real-time Monitoring</text>
+            <rect x="310" y="342" width="35" height="46" class="qc-box" rx="4"/>
+            <text x="327" y="357" class="qc-t">QC-04</text>
+            <text x="327" y="369" class="qc-s">رنگ‌</text>
+            <text x="327" y="381" class="qc-s">ثبات</text>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!--  ردیف انتقال (اتصال رینگ → رنگرزی)                            -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <rect x="1248" y="138" width="340" height="175" class="zone-bg" rx="6"/>
-            <text x="1418" y="155" class="zone-label" style="fill:#94a3b8;">نگهداری و تعمیرات</text>
-            <text x="1418" y="165" class="zone-label-en">MAINTENANCE WORKSHOP</text>
-            <!-- ابزار نمادین -->
-            <text x="1310" y="230" style="fill:#475569;font-size:30px;text-anchor:middle;">🔧</text>
-            <text x="1390" y="230" style="fill:#475569;font-size:30px;text-anchor:middle;">⚙️</text>
-            <text x="1470" y="230" style="fill:#475569;font-size:30px;text-anchor:middle;">🔩</text>
-            <text x="1418" y="270" style="fill:#374151;font-size:8px;text-anchor:middle;font-family:'Vazirmatn FD';">برنامه‌ریزی PM | WO | توقفات</text>
+            <!-- خط جداکننده QC / Lab -->
+            <line x1="155" y1="398" x2="345" y2="398" stroke="#1e3a5f" stroke-width="1.5" stroke-dasharray="4 3"/>
 
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!-- فلش‌های جریان اصلی و برچسب مراحل                              -->
-            <!-- ══════════════════════════════════════════════════════════════ -->
-            <!-- برچسب جریان ردیف بالا -->
-            <text x="550" y="670" class="flow-label" style="fill:#64748b;font-size:8px;text-anchor:middle;">
-                جریان ریسندگی: انبار ← حلاجی ← کاردینگ ← پاساژ ← فینیشر ← رینگ
-            </text>
-            <text x="1020" y="670" class="flow-label" style="fill:#4ade80;font-size:8px;text-anchor:middle;">
-                خط تکمیل فرش: رینگ ← بوبین‌پیچی ← دولاتابی TFO ← هیت‌ست ← انبار
-            </text>
+            <!-- بخش پایین: آزمایشگاه -->
+            <text x="250" y="413" class="zone-title" style="fill:#c4b5fd;">آزمایشگاه</text>
+            <text x="250" y="423" class="zone-sub" style="fill:#6d28d9;">LABORATORY</text>
 
-            <!-- خط جداکننده ردیف‌ها -->
-            <line x1="8" y1="338" x2="1242" y2="338" stroke="#1e3a2e" stroke-width="1.5" stroke-dasharray="8 4"/>
+            <rect x="158" y="432" width="44" height="50" class="lab-box" rx="4"/>
+            <text x="180" y="448" class="lab-t">Uster</text>
+            <text x="180" y="459" class="lab-t">Tester</text>
+            <text x="180" y="472" class="lab-s">یکنواختی</text>
 
-            <!-- فلش رنگرزی ← نخ رینگ (اختیاری) -->
-            <line x1="138" y1="318" x2="138" y2="343" class="flow-line"/>
+            <rect x="208" y="432" width="44" height="50" class="lab-box" rx="4"/>
+            <text x="230" y="448" class="lab-t">Tensile</text>
+            <text x="230" y="459" class="lab-t">Tester</text>
+            <text x="230" y="472" class="lab-s">استحکام</text>
+
+            <rect x="258" y="432" width="44" height="50" class="lab-box" rx="4"/>
+            <text x="280" y="448" class="lab-t">Twist</text>
+            <text x="280" y="459" class="lab-t">Tester</text>
+            <text x="280" y="472" class="lab-s">آزمون تاب</text>
+
+            <rect x="308" y="432" width="37" height="50" class="lab-box" rx="4"/>
+            <text x="326" y="448" class="lab-t">Wrap</text>
+            <text x="326" y="459" class="lab-t">Reel</text>
+            <text x="326" y="472" class="lab-s">نمره‌سنج</text>
+
+            <!-- ایمنی -->
+            <rect x="160" y="492" width="185" height="30" rx="4" fill="#0a1628" stroke="#1e3a5f" stroke-width="1"/>
+            <text x="252" y="511" style="fill:#475569;font-size:8px;font-family:'Vazirmatn FD';text-anchor:middle;">📋 گزارش کیفی روزانه | نمونه‌گیری هر ۲ ساعت</text>
+
+            <!-- 9. بوبین‌پیچی  x=355 w=155 -->
+            <rect x="355" y="305" width="155" height="270" class="zone-finish" rx="5"/>
+            <text x="432" y="322" class="zone-title" style="fill:#86efac;">بوبین‌پیچی</text>
+            <text x="432" y="333" class="zone-sub" style="fill:#15803d;">WINDING</text>
+            <g id="zone-winding" data-type="winding"></g>
+            <line x1="510" y1="440" x2="521" y2="440" class="flow"/>
+
+            <!-- 10. دولاتابی TFO  x=516 w=155 -->
+            <rect x="516" y="305" width="155" height="270" class="zone-finish" rx="5"/>
+            <text x="593" y="322" class="zone-title" style="fill:#86efac;">دولاتابی TFO</text>
+            <text x="593" y="333" class="zone-sub" style="fill:#15803d;">TWO-FOR-ONE</text>
+            <g id="zone-tfo" data-type="tfo"></g>
+            <line x1="671" y1="440" x2="682" y2="440" class="flow"/>
+
+            <!-- 11. هیت‌ست  x=677 w=155 -->
+            <rect x="677" y="305" width="155" height="270" class="zone-finish" rx="5"/>
+            <text x="754" y="322" class="zone-title" style="fill:#86efac;">هیت‌ست</text>
+            <text x="754" y="333" class="zone-sub" style="fill:#15803d;">HEAT SETTING</text>
+            <g id="zone-heatset" data-type="heatset"></g>
+            <line x1="832" y1="440" x2="843" y2="440" class="flow"/>
+
+            <!-- 12. انبار محصول نهایی  x=837 w=158 -->
+            <rect x="837" y="305" width="158" height="270" class="zone-storage" rx="5"/>
+            <text x="916" y="322" class="zone-title" style="fill:#fbbf24;">انبار محصول</text>
+            <text x="916" y="333" class="zone-sub" style="fill:#92400e;">FINISHED GOODS</text>
+            <!-- بوبین‌های نخ -->
+            <circle cx="875" cy="390" r="18" fill="none" stroke="#92400e" stroke-width="2.5"/>
+            <circle cx="875" cy="390" r="7"  fill="#78350f"/>
+            <circle cx="916" cy="390" r="18" fill="none" stroke="#92400e" stroke-width="2.5"/>
+            <circle cx="916" cy="390" r="7"  fill="#78350f"/>
+            <circle cx="957" cy="390" r="18" fill="none" stroke="#92400e" stroke-width="2.5"/>
+            <circle cx="957" cy="390" r="7"  fill="#78350f"/>
+            <circle cx="875" cy="432" r="18" fill="none" stroke="#78350f" stroke-width="2.5"/>
+            <circle cx="875" cy="432" r="7"  fill="#451a03"/>
+            <circle cx="916" cy="432" r="18" fill="none" stroke="#78350f" stroke-width="2.5"/>
+            <circle cx="916" cy="432" r="7"  fill="#451a03"/>
+            <circle cx="957" cy="432" r="18" fill="none" stroke="#78350f" stroke-width="2.5"/>
+            <circle cx="957" cy="432" r="7"  fill="#451a03"/>
+            <text x="916" y="475" style="fill:#92400e;font-size:9px;text-anchor:middle;font-family:'Vazirmatn FD';">آماده تحویل مشتری</text>
+
+            <!-- فلش از رینگ (ردیف ۱ راست) به بوبین‌پیچی (ردیف ۲) -->
+            <!-- خط عمودی از رینگ پایین به بوبین‌پیچی بالا -->
+            <line x1="432" y1="290" x2="432" y2="304" class="flow"/>
         </svg>
     </div>
 
-    <!-- ── Legend ── -->
+    <!-- Legend -->
     <div class="map-legend">
         <div class="legend-item"><div class="legend-box" style="background:#16a34a;"></div>راندمان ≥ ۹۰٪</div>
         <div class="legend-item"><div class="legend-box" style="background:#ca8a04;"></div>۷۰٪ – ۹۰٪</div>
         <div class="legend-item"><div class="legend-box" style="background:#dc2626;"></div>&lt; ۷۰٪ / متوقف</div>
         <div class="legend-item"><div class="legend-box" style="background:#ea580c;border:1px dashed;"></div>در حال تعمیر</div>
-        <div class="legend-item"><div class="legend-box" style="background:#1f2937;border:1px solid #374151;"></div>خاموش</div>
-        <div class="legend-item"><div class="legend-box" style="background:#1e3a5f;border:1px solid #3b82f6;"></div>کنترل کیفیت</div>
-        <div class="legend-item"><div class="legend-box" style="background:#1e3040;border:1px solid #8b5cf6;"></div>آزمایشگاه</div>
-        <div class="legend-item"><div class="legend-box" style="background:#1c2030;border:1px solid #3b5f3b;"></div>خط تکمیل فرش</div>
+        <div class="legend-item"><div class="legend-box" style="background:#1e293b;border:1px solid #334155;"></div>خاموش</div>
+        <div class="legend-item"><div class="legend-box" style="background:#0d1f3c;border:1px solid #3b82f6;"></div>کنترل کیفیت</div>
+        <div class="legend-item"><div class="legend-box" style="background:#1a0f2e;border:1px solid #6d28d9;"></div>آزمایشگاه</div>
+        <div class="legend-item"><div class="legend-box" style="background:#0f2620;border:1px solid #166534;"></div>خط تکمیل</div>
     </div>
 </div>
 
-<!-- ── Tooltip ── -->
+<!-- Tooltip -->
 <div class="map-tooltip" id="machine-tooltip">
     <div class="tt-header">
         <span class="tt-name" id="tt-name">--</span>
-        <span class="tt-status" id="tt-status">--</span>
+        <span class="tt-badge" id="tt-status">--</span>
     </div>
-    <div class="tt-row"><span class="tt-key">کد ماشین</span><span class="tt-val" id="tt-code">--</span></div>
-    <div class="tt-row"><span class="tt-key">نوع</span><span class="tt-val" id="tt-type">--</span></div>
-    <div class="tt-row"><span class="tt-key">خط تولید</span><span class="tt-val" id="tt-line">--</span></div>
-    <div class="tt-row"><span class="tt-key">شیفت</span><span class="tt-val" id="tt-shift">--</span></div>
-    <div class="tt-row"><span class="tt-key">راندمان</span><span class="tt-val" id="tt-eff">--</span></div>
-    <div class="tt-row"><span class="tt-key">تولید امروز</span><span class="tt-val" id="tt-output">--</span></div>
-    <div class="tt-row"><span class="tt-key">آخرین بچ</span><span class="tt-val" id="tt-batch">--</span></div>
+    <div class="tt-row"><span class="tt-k">کد</span><span class="tt-v" id="tt-code">--</span></div>
+    <div class="tt-row"><span class="tt-k">نوع</span><span class="tt-v" id="tt-type">--</span></div>
+    <div class="tt-row"><span class="tt-k">خط</span><span class="tt-v" id="tt-line">--</span></div>
+    <div class="tt-row"><span class="tt-k">شیفت</span><span class="tt-v" id="tt-shift">--</span></div>
+    <div class="tt-row"><span class="tt-k">راندمان</span><span class="tt-v" id="tt-eff">--</span></div>
+    <div class="tt-row"><span class="tt-k">تولید امروز</span><span class="tt-v" id="tt-output">--</span></div>
+    <div class="tt-row"><span class="tt-k">آخرین بچ</span><span class="tt-v" id="tt-batch">--</span></div>
 </div>
 {% endblock %}
 
@@ -451,34 +388,28 @@
     const API_URL = '{% url "dashboard:floor_map_api" %}';
     const REFRESH = 30;
     let countdown = REFRESH;
-    let machineDataMap = {};
+    let mData = {};
 
-    // ═══ ZONE CONFIG ═══
-    // هر zone: {x, y, w, h, cols, gapX, gapY, maxPerCol}
-    // x,y = مختصات اولین ماشین
-    // cols = تعداد ستون‌ها
-    // gapX = فاصله افقی بین ستون‌ها
-    // gapY = فاصله عمودی بین ماشین‌ها
-    // maxPerCol = حداکثر تعداد در هر ستون
-    const ZONE_CONFIG = {
-        blowroom: { x: 125, y: 55,  w: 48, h: 32, cols: 2, gapX: 55, gapY: 42, maxPerCol: 6 },
-        carding:  { x: 263, y: 55,  w: 42, h: 28, cols: 4, gapX: 52, gapY: 36, maxPerCol: 7 },
-        passage:  { x: 503, y: 55,  w: 42, h: 28, cols: 2, gapX: 52, gapY: 36, maxPerCol: 7 },
-        finisher: { x: 633, y: 55,  w: 42, h: 28, cols: 2, gapX: 52, gapY: 36, maxPerCol: 7 },
-        ring:     { x: 763, y: 55,  w: 52, h: 24, cols: 5, gapX: 94, gapY: 32, maxPerCol: 8 },
-        // خط تکمیل
-        winding:  { x: 763, y: 393, w: 52, h: 32, cols: 2, gapX: 60, gapY: 42, maxPerCol: 3 },
-        tfo:      { x: 928, y: 393, w: 52, h: 32, cols: 2, gapX: 60, gapY: 42, maxPerCol: 3 },
-        heatset:  { x: 1093,y: 393, w: 52, h: 32, cols: 2, gapX: 60, gapY: 42, maxPerCol: 3 },
-        // رنگرزی
-        dyeing:   { x: 23,  y: 393, w: 52, h: 32, cols: 4, gapX: 60, gapY: 42, maxPerCol: 3 },
+    // ═══ Zone config — مختصات و ابعاد هر بخش ═══
+    // x,y = شروع اولین ماشین | w,h = ابعاد ماشین
+    // cols = ستون | gapX = فاصله افقی | gapY = فاصله عمودی | maxPerCol = ردیف در هر ستون
+    const ZC = {
+        blowroom: { x:95,  y:48,  w:52, h:38, cols:2, gapX:58, gapY:48, maxPerCol:5 },
+        carding:  { x:215, y:48,  w:44, h:34, cols:4, gapX:50, gapY:42, maxPerCol:5 },
+        passage:  { x:413, y:48,  w:44, h:34, cols:2, gapX:50, gapY:42, maxPerCol:5 },
+        finisher: { x:521, y:48,  w:44, h:34, cols:2, gapX:50, gapY:42, maxPerCol:5 },
+        ring:     { x:629, y:48,  w:54, h:30, cols:5, gapX:70, gapY:38, maxPerCol:6 },
+        winding:  { x:363, y:350, w:54, h:38, cols:2, gapX:65, gapY:50, maxPerCol:4 },
+        tfo:      { x:524, y:350, w:54, h:38, cols:2, gapX:65, gapY:50, maxPerCol:4 },
+        heatset:  { x:685, y:350, w:54, h:38, cols:2, gapX:65, gapY:50, maxPerCol:4 },
+        dyeing:   { x:13,  y:350, w:52, h:36, cols:2, gapX:62, gapY:46, maxPerCol:5 },
     };
 
-    const TYPE_LABELS = {
-        blowroom: 'حلاجی', carding: 'کاردینگ', passage: 'پاساژ',
-        finisher: 'فینیشر', ring: 'رینگ', winding: 'بوبین‌پیچی',
-        tfo: 'دولاتابی', heatset: 'هیت‌ست', dyeing: 'رنگرزی',
+    const TYPE_FA = {
+        blowroom:'حلاجی', carding:'کاردینگ', passage:'پاساژ', finisher:'فینیشر',
+        ring:'رینگ', winding:'بوبین‌پیچی', tfo:'دولاتابی TFO', heatset:'هیت‌ست', dyeing:'رنگرزی',
     };
+    const STATUS_FA = { good:'فعال', warning:'هشدار', critical:'بحرانی', maintenance:'تعمیرات', idle:'خاموش' };
 
     // ═══ Init ═══
     fetchData();
@@ -487,19 +418,20 @@
     function fetchData() {
         fetch(API_URL, { headers: {'X-Requested-With': 'XMLHttpRequest'} })
         .then(r => r.json())
-        .then(data => {
-            updateKPIs(data.summary);
-            updateMeta(data);
-            renderMachines(data.machines);
+        .then(d => {
+            updateKPIs(d.summary);
+            document.getElementById('meta-date').textContent = d.jalali_date;
+            document.getElementById('meta-shift').textContent = d.shift;
+            renderAll(d.machines);
             countdown = REFRESH;
         })
-        .catch(err => console.error('Floor map API error:', err));
+        .catch(e => console.error('API Error:', e));
     }
 
     function tick() {
         countdown--;
         const el = document.getElementById('meta-timer');
-        if (el) el.textContent = countdown <= 0 ? 'در حال بروزرسانی...' : `بروزرسانی تا ${countdown} ثانیه`;
+        if (el) el.textContent = countdown <= 0 ? 'در حال بروزرسانی...' : `بروزرسانی: ${countdown}s`;
         if (countdown <= 0) fetchData();
     }
 
@@ -510,105 +442,91 @@
         });
     }
 
-    function updateMeta(data) {
-        const d = document.getElementById('meta-date');
-        const sh = document.getElementById('meta-shift');
-        if (d) d.textContent = data.jalali_date;
-        if (sh) sh.textContent = data.shift;
-    }
-
-    // ═══ Render Machines ═══
-    function renderMachines(machines) {
+    // ═══ Render ═══
+    function renderAll(machines) {
+        // گروه‌بندی
         const groups = {};
         machines.forEach(m => {
+            mData[m.code] = m;
             if (!groups[m.type]) groups[m.type] = [];
             groups[m.type].push(m);
-            machineDataMap[m.code] = m;
         });
 
-        Object.keys(ZONE_CONFIG).forEach(type => {
+        Object.keys(ZC).forEach(type => {
             const zone = document.getElementById('zone-' + type);
             if (!zone) return;
             zone.innerHTML = '';
-            const cfg = ZONE_CONFIG[type];
+            const c = ZC[type];
             const list = groups[type] || [];
 
             list.forEach((m, i) => {
-                const col = Math.floor(i / cfg.maxPerCol);
-                const row = i % cfg.maxPerCol;
-                const x = cfg.x + col * cfg.gapX;
-                const y = cfg.y + row * cfg.gapY;
+                const col = Math.floor(i / c.maxPerCol);
+                const row = i % c.maxPerCol;
+                const x = c.x + col * c.gapX;
+                const y = c.y + row * c.gapY;
 
                 const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-                g.setAttribute('data-code', m.code);
-                g.setAttribute('class', 'machine-group');
-
                 const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                 rect.setAttribute('x', x); rect.setAttribute('y', y);
-                rect.setAttribute('width', cfg.w); rect.setAttribute('height', cfg.h);
+                rect.setAttribute('width', c.w); rect.setAttribute('height', c.h);
                 rect.setAttribute('class', `machine-rect heat-${m.heat_level}`);
-                rect.setAttribute('rx', '4');
+                rect.setAttribute('rx', '5');
 
                 const code = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                code.setAttribute('x', x + cfg.w / 2);
-                code.setAttribute('y', y + cfg.h / 2 + (cfg.h > 28 ? 2 : 3));
-                code.setAttribute('class', 'machine-code');
+                code.setAttribute('x', x + c.w / 2);
+                code.setAttribute('y', y + c.h / 2 + (m.efficiency > 0 ? 0 : 4));
+                code.setAttribute('class', 'm-code');
                 code.textContent = m.code;
-
-                // راندمان زیر کد (اگر فضا باشد)
-                if (cfg.h >= 30) {
-                    const eff = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    eff.setAttribute('x', x + cfg.w / 2);
-                    eff.setAttribute('y', y + cfg.h / 2 + 12);
-                    eff.setAttribute('class', 'machine-name');
-                    eff.textContent = m.efficiency > 0 ? m.efficiency + '%' : '-';
-                    g.appendChild(eff);
-                }
 
                 g.appendChild(rect);
                 g.appendChild(code);
 
-                g.addEventListener('mouseenter', e => showTooltip(e, m));
-                g.addEventListener('mousemove', moveTooltip);
-                g.addEventListener('mouseleave', hideTooltip);
+                // راندمان اگر موجود باشد
+                if (m.efficiency > 0) {
+                    const eff = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    eff.setAttribute('x', x + c.w / 2);
+                    eff.setAttribute('y', y + c.h / 2 + 13);
+                    eff.setAttribute('class', 'm-eff');
+                    eff.textContent = m.efficiency + '%';
+                    g.appendChild(eff);
+                }
 
+                g.addEventListener('mouseenter', e => showTT(e, m));
+                g.addEventListener('mousemove', moveTT);
+                g.addEventListener('mouseleave', hideTT);
                 zone.appendChild(g);
             });
         });
     }
 
     // ═══ Tooltip ═══
-    const tooltip = document.getElementById('machine-tooltip');
+    const TT = document.getElementById('machine-tooltip');
 
-    function showTooltip(e, m) {
-        const f = machineDataMap[m.code] || m;
-        document.getElementById('tt-name').textContent = f.name;
-        document.getElementById('tt-code').textContent = f.code;
-        document.getElementById('tt-type').textContent = TYPE_LABELS[f.type] || f.type;
-        document.getElementById('tt-line').textContent = f.line_code;
-        document.getElementById('tt-shift').textContent = f.shift;
-        document.getElementById('tt-eff').textContent = f.efficiency > 0 ? f.efficiency + '%' : '-';
+    function showTT(e, m) {
+        const f = mData[m.code] || m;
+        document.getElementById('tt-name').textContent   = f.name;
+        document.getElementById('tt-code').textContent   = f.code;
+        document.getElementById('tt-type').textContent   = TYPE_FA[f.type] || f.type;
+        document.getElementById('tt-line').textContent   = f.line_code;
+        document.getElementById('tt-shift').textContent  = f.shift;
+        document.getElementById('tt-eff').textContent    = f.efficiency > 0 ? f.efficiency + '%' : '—';
         document.getElementById('tt-output').textContent = f.output_kg > 0
-            ? parseFloat(f.output_kg).toLocaleString('fa-IR', {maximumFractionDigits:1}) + ' kg' : '-';
-        document.getElementById('tt-batch').textContent = f.last_batch || '-';
-
+            ? (+f.output_kg).toLocaleString('fa-IR', {maximumFractionDigits:1}) + ' kg' : '—';
+        document.getElementById('tt-batch').textContent  = f.last_batch || '—';
         const s = document.getElementById('tt-status');
-        s.className = 'tt-status tt-status-' + f.heat_level;
-        s.textContent = {good:'فعال',warning:'هشدار',critical:'بحرانی',maintenance:'تعمیرات',idle:'خاموش'}[f.heat_level] || '-';
-
-        tooltip.classList.add('visible');
-        moveTooltip(e);
+        s.className = 'tt-badge s-' + f.heat_level;
+        s.textContent = STATUS_FA[f.heat_level] || '—';
+        TT.classList.add('visible');
+        moveTT(e);
     }
-
-    function moveTooltip(e) {
-        let x = e.clientX + 18, y = e.clientY + 18;
-        if (x + 280 > window.innerWidth)  x = e.clientX - 290;
-        if (y + 220 > window.innerHeight) y = e.clientY - 220;
-        tooltip.style.left = x + 'px';
-        tooltip.style.top  = y + 'px';
+    function moveTT(e) {
+        let x = e.clientX + 16, y = e.clientY + 16;
+        if (x + 250 > window.innerWidth)  x = e.clientX - 255;
+        if (y + 230 > window.innerHeight) y = e.clientY - 230;
+        TT.style.left = x + 'px';
+        TT.style.top  = y + 'px';
     }
-
-    function hideTooltip() { tooltip.classList.remove('visible'); }
+    function hideTT() { TT.classList.remove('visible'); }
 
 })();
 </script>
