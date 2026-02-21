@@ -1,0 +1,42 @@
+# ================================================
+#  DIACO MES — Git Line Endings Config
+# ================================================
+
+# پیش‌فرض: CRLF روی ویندوز، LF روی لینوکس
+* text=auto
+
+# فایل‌های لینوکس — همیشه LF
+*.sh        text eol=lf
+*.py        text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.js        text eol=lf
+*.json      text eol=lf
+*.xml       text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+.htaccess   text eol=lf
+Makefile    text eol=lf
+
+# فایل‌های ویندوز — همیشه CRLF
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# فایل‌های باینری — بدون تغییر
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
