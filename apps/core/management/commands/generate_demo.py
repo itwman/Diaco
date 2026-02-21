@@ -49,14 +49,15 @@ class Command(BaseCommand):
 
     def _reset_demo_data(self):
         """پاک‌سازی همه داده‌های دمو"""
-        from apps.blowroom.models import Batch as BlBatch, BatchInput
+        from apps.blowroom.models import Batch as BlBatch
+        from apps.blowroom.models import BatchInput
         from apps.carding.models import Production as CrProd
         from apps.passage.models import Production as PsProd
         from apps.finisher.models import Production as FnProd
         from apps.spinning.models import Production as SpProd, TravelerReplacement
         from apps.winding.models import Production as WdProd
         from apps.tfo.models import Production as TfoProd
-        from apps.heatset.models import Production as HsProd
+        from apps.heatset.models import Batch as HsProd
         from apps.maintenance.models import WorkOrder, DowntimeLog, Schedule, MachineServiceDate
         from apps.orders.models import Order, Customer, ColorShade
         from apps.inventory.models import FiberStock, DyeStock, ChemicalStock, StockTransaction, FiberCategory
