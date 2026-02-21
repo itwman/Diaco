@@ -15,7 +15,6 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 # اطلاعات ثابت خطوط
 LINES = [
@@ -390,7 +389,7 @@ class Command(BaseCommand):
                 ColorShade.objects.create(
                     code=code, name=name, color_hex=hex_c,
                     is_approved=True, approved_by=approver,
-                    approved_at=timezone.now()-timedelta(days=random.randint(10,120)))
+                    approved_at=datetime.now()-timedelta(days=random.randint(10,120)))
         self.stdout.write(f'  ✓ {len(shades)} شید رنگ')
 
     # ── سفارشات — ۱۱۰ عدد در همه وضعیت‌ها ──────────────────────
@@ -495,6 +494,7 @@ class Command(BaseCommand):
         if not machines or not op:
             return
 
+        now_dt = datetime.now()
         for m in machines:
             tech = random.choice(techs) if techs else op
             Schedule.objects.get_or_create(
@@ -502,14 +502,14 @@ class Command(BaseCommand):
                 defaults=dict(
                     maintenance_type='preventive', frequency='weekly',
                     description=f'تمیزکاری و روغن‌کاری {m.name}',
-                    next_due_at=timezone.now()+timedelta(days=random.randint(-2,7)),
+                    next_due_at=now_dt+timedelta(days=random.randint(-2,7)),
                     assigned_to=tech, priority='medium'))
             Schedule.objects.get_or_create(
                 machine=m, title=f'PM ماهانه {m.code}',
                 defaults=dict(
                     maintenance_type='preventive', frequency='monthly',
                     description=f'بازرسی کامل {m.name}',
-                    next_due_at=timezone.now()+timedelta(days=random.randint(3,30)),
+                    next_due_at=now_dt+timedelta(days=random.randint(3,30)),
                     assigned_to=tech, priority='high'))
             if random.random() > 0.4:
                 wo_num = f"WO-{date.today().strftime('%Y%m%d')}-{m.id:04d}"
@@ -533,7 +533,7 @@ class Command(BaseCommand):
             for _ in range(random.randint(0, 3)):
                 if shifts:
                     dur = random.randint(10, 180)
-                    st  = timezone.now() - timedelta(hours=random.randint(2, 96))
+                    st  = datetime.now() - timedelta(hours=random.randint(2, 96))
                     DowntimeLog.objects.create(
                         machine=m, operator=op,
                         shift=random.choice(shifts),
@@ -658,18 +658,19 @@ class Command(BaseCommand):
             production_line=line, machine_type=mtype, status='active'))
 
     def _t0(self, d, hist=False):
+        """زمان شروع بچ — سازگار با USE_TZ=False"""
         if hist and d:
             base = datetime.combine(d, datetime.min.time())
-            return timezone.make_aware(
-                base + timedelta(hours=random.randint(0, 22),
-                                 minutes=random.randint(0, 59)))
-        return timezone.now() - timedelta(hours=random.uniform(0.1, 2.5))
+            return base + timedelta(hours=random.randint(0, 22),
+                                    minutes=random.randint(0, 59))
+        return datetime.now() - timedelta(hours=random.uniform(0.1, 2.5))
 
     def _ftype(self, line):
         ld = next((x for x in LINES if x['code'] == line.code), None)
         return ld['fiber'] if ld else 'acrylic'
 
     def _done(self, st, lo=0.8, hi=4.0, hist=False, sta=''):
+        """زمان پایان بچ"""
         if sta == 'completed' or hist:
             return st + timedelta(hours=random.uniform(lo, hi))
         return None
@@ -919,7 +920,7 @@ class Command(BaseCommand):
             return
         m   = random.choice(ms)
         dur = random.randint(8, 130)
-        st  = timezone.now() - timedelta(minutes=dur + random.randint(0, 90))
+        st  = datetime.now() - timedelta(minutes=dur + random.randint(0, 90))
         DowntimeLog.objects.create(
             machine=m, operator=op, shift=shift,
             production_line=line,
